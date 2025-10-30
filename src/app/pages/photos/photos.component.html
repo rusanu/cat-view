@@ -29,10 +29,27 @@
           <h5>Photos ({{ photos.length }})</h5>
           <small class="text-muted">Last 24 hours</small>
         </div>
-        <button class="btn btn-sm btn-outline-primary" (click)="toggleGraphs()">
-          <span *ngIf="!showGraphs">📊 Show Graphs</span>
-          <span *ngIf="showGraphs">📊 Hide Graphs</span>
-        </button>
+        <div class="header-actions">
+          <button class="btn btn-sm btn-outline-secondary"
+                  (click)="refreshPhotos()"
+                  [disabled]="loading"
+                  title="Refresh photos">
+            <span *ngIf="!loading">🔄</span>
+            <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+          </button>
+          <button class="btn btn-sm"
+                  [class.btn-success]="autoRefresh"
+                  [class.btn-outline-secondary]="!autoRefresh"
+                  (click)="toggleAutoRefresh()"
+                  title="Toggle auto-refresh (every 1 minute)">
+            <span *ngIf="!autoRefresh">⏸️ Auto</span>
+            <span *ngIf="autoRefresh">▶️ Auto</span>
+          </button>
+          <button class="btn btn-sm btn-outline-primary" (click)="toggleGraphs()">
+            <span *ngIf="!showGraphs">📊 Show Graphs</span>
+            <span *ngIf="showGraphs">📊 Hide Graphs</span>
+          </button>
+        </div>
       </div>
       <app-photo-list class="photo-list-container"
         [photos]="photos"

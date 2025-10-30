@@ -20,6 +20,9 @@ export class PhotosComponent implements OnInit, OnDestroy {
   startDate?: Date;
   endDate?: Date;
   showGraphs = false; // Toggle for showing graphs
+  autoRefresh = false; // Toggle for auto-refresh
+  private refreshInterval: any = null;
+  private readonly REFRESH_INTERVAL_MS = 60000; // 1 minute
 
   // Left/Right panel resizing
   leftPanelWidth = 350; // Default width
@@ -64,6 +67,11 @@ export class PhotosComponent implements OnInit, OnDestroy {
     document.removeEventListener('mouseup', this.onMouseUp);
     document.removeEventListener('mousemove', this.onVerticalMouseMove);
     document.removeEventListener('mouseup', this.onVerticalMouseUp);
+
+    // Clean up auto-refresh interval
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
   }
 
   async loadPhotos() {
@@ -96,6 +104,27 @@ export class PhotosComponent implements OnInit, OnDestroy {
 
   toggleGraphs() {
     this.showGraphs = !this.showGraphs;
+  }
+
+  async refreshPhotos() {
+    await this.loadPhotos();
+  }
+
+  toggleAutoRefresh() {
+    this.autoRefresh = !this.autoRefresh;
+
+    if (this.autoRefresh) {
+      // Start polling
+      this.refreshInterval = setInterval(() => {
+        this.refreshPhotos();
+      }, this.REFRESH_INTERVAL_MS);
+    } else {
+      // Stop polling
+      if (this.refreshInterval) {
+        clearInterval(this.refreshInterval);
+        this.refreshInterval = null;
+      }
+    }
   }
 
   // Panel resizing methods

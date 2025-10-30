@@ -31,6 +31,12 @@
   flex: 1;
 }
 
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .photo-list-container {
   flex: 1;
   min-height: 0;
