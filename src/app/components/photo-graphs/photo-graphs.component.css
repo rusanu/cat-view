@@ -23,6 +23,22 @@
   padding: 2rem;
 }
 
+.loading-content {
+  width: 100%;
+  max-width: 400px;
+}
+
+.progress-info {
+  margin: 0.5rem 0;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.progress {
+  height: 1.5rem;
+  margin-top: 0.5rem;
+}
+
 .warning-state {
   background-color: #fff3cd;
   border: 1px solid #ffc107;

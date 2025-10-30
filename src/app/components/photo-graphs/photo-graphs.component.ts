@@ -30,6 +30,8 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit {
 
   private chart: Chart | null = null;
   loading = false;
+  loadingProgress = 0;
+  loadingTotal = 0;
   error: string | null = null;
   warning: string | null = null;
 
@@ -53,6 +55,8 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit {
     }
 
     this.loading = true;
+    this.loadingProgress = 0;
+    this.loadingTotal = this.photos.length;
     this.error = null;
     this.warning = null;
 
@@ -65,6 +69,8 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit {
       for (const photo of this.photos) {
         try {
           const metadata = await this.metadataService.getMetadata(photo.key);
+          this.loadingProgress++;
+
           if (metadata) {
             // Cat is considered present if motion was detected within last 5 minutes (300 seconds)
             const catPresent = metadata.seconds_since_last_motion < 300;
@@ -90,6 +96,7 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit {
           }
         } catch (error) {
           console.warn('Failed to load metadata for', photo.key, error);
+          this.loadingProgress++;
           failedCount++;
         }
       }
