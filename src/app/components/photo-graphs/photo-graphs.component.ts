@@ -98,8 +98,11 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
     // Reset data points for full reload
     this.allDataPoints = [];
 
-    // Create empty chart immediately
-    this.createEmptyChart();
+    // Estimate time range from photo file names
+    const timeRange = this.estimateTimeRange();
+
+    // Create empty chart immediately with estimated time range
+    this.createEmptyChart(timeRange);
 
     // Set up ResizeObserver to handle container resizing
     this.setupResizeObserver();
@@ -131,6 +134,22 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
     });
 
     this.resizeObserver.observe(container);
+  }
+
+  private estimateTimeRange(): { min: Date; max: Date } | null {
+    if (this.photos.length === 0) {
+      return null;
+    }
+
+    // Photos are already sorted by timestamp (newest first)
+    // So first photo = latest, last photo = oldest
+    const latestTimestamp = this.photos[0].timestamp;
+    const oldestTimestamp = this.photos[this.photos.length - 1].timestamp;
+
+    return {
+      min: oldestTimestamp,
+      max: latestTimestamp
+    };
   }
 
   private async loadNewPhotosMetadata(newPhotoCount: number) {
@@ -292,7 +311,7 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
     }
   }
 
-  private createEmptyChart() {
+  private createEmptyChart(timeRange: { min: Date; max: Date } | null = null) {
     if (!this.chartCanvas?.nativeElement) {
       console.warn('Chart canvas not available');
       return;
@@ -407,6 +426,11 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
                 hour: 'HH:mm' // Just time for 24h data
               }
             },
+            // Set time range from photo file names if available
+            ...(timeRange && {
+              min: timeRange.min.getTime(),
+              max: timeRange.max.getTime()
+            }),
             ticks: {
               maxRotation: 45,
               minRotation: 45,
