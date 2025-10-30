@@ -449,8 +449,9 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
             title: {
               display: true,
               text: 'Temperature (°C)'
-            }
-            // Auto-scale - no fixed min/max
+            },
+            min: -10,
+            max: 40
           },
           yHumidity: {
             type: 'linear',
