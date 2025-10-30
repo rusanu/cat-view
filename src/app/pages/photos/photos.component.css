@@ -14,13 +14,20 @@
   display: flex;
   flex-direction: column;
   background-color: #f8f9fa;
-  overflow: hidden;
 }
 
 .panel-header {
   padding: 1rem;
   border-bottom: 1px solid #dee2e6;
   background-color: white;
+  flex-shrink: 0;
+}
+
+.photo-list-container {
+  flex: 1;
+  min-height: 0;
+  display: block;
+  overflow: hidden;
 }
 
 .panel-header h5 {

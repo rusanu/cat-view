@@ -28,7 +28,7 @@
         <h5>Photos ({{ photos.length }})</h5>
         <small class="text-muted">Last 24 hours</small>
       </div>
-      <app-photo-list
+      <app-photo-list class="photo-list-container"
         [photos]="photos"
         [selectedPhoto]="selectedPhoto"
         (photoSelected)="onPhotoSelected($event)">
