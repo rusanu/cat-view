@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bd onboard:*)",
+      "Bash(bd create:*)",
+      "Bash(bd ready:*)",
+      "Bash(bd list:*)",
+      "Bash(bd update:*)",
+      "Bash(node --version:*)",
+      "Bash(npm:*)",
+      "Bash(npx -y @angular/cli@17 new cat-view-app --routing --style=css --skip-git=true)",
+      "Bash(bd close:*)",
+      "Bash(npx ng add:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
