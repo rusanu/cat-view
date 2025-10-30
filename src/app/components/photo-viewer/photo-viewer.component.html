@@ -25,6 +25,46 @@
       </div>
     </div>
 
+    <!-- Metadata -->
+    <div class="metadata-bar" *ngIf="metadata">
+      <div class="metadata-grid">
+        <div class="metadata-item">
+          <span class="metadata-label">Temperature:</span>
+          <span class="metadata-value">{{ metadata.temperature_celsius }}°C</span>
+        </div>
+        <div class="metadata-item">
+          <span class="metadata-label">Humidity:</span>
+          <span class="metadata-value">{{ metadata.humidity_percent }}%</span>
+        </div>
+        <div class="metadata-item">
+          <span class="metadata-label">Blanket:</span>
+          <span class="metadata-value" [class.status-on]="metadata.blanket_on">
+            {{ metadata.blanket_on ? 'ON' : 'OFF' }}
+          </span>
+        </div>
+        <div class="metadata-item">
+          <span class="metadata-label">Cat:</span>
+          <span class="metadata-value" [class.status-on]="metadata.cat_present">
+            {{ metadata.cat_present ? 'Present' : 'Away' }}
+          </span>
+        </div>
+        <div class="metadata-item">
+          <span class="metadata-label">Motion:</span>
+          <span class="metadata-value">{{ metadata.seconds_since_last_motion }}s ago</span>
+        </div>
+        <div class="metadata-item">
+          <span class="metadata-label">Uptime:</span>
+          <span class="metadata-value">{{ formatUptime(metadata.uptime_seconds) }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="metadata-bar" *ngIf="metadataLoading">
+      <span class="text-muted">Loading metadata...</span>
+    </div>
+    <div class="metadata-bar" *ngIf="!metadata && !metadataLoading && photo">
+      <span class="text-muted">No metadata available</span>
+    </div>
+
     <!-- Image -->
     <div class="image-container">
       <img [src]="photo.url"
