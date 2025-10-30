@@ -29,6 +29,8 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
   @ViewChild('chartCanvas', { static: false }) chartCanvas!: ElementRef<HTMLCanvasElement>;
 
   private chart: Chart | null = null;
+  private retryCount = 0;
+  private readonly MAX_RETRIES = 10;
   loading = false;
   loadingProgress = 0;
   loadingTotal = 0;
@@ -39,21 +41,39 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
 
   ngAfterViewInit() {
     if (this.photos.length > 0) {
-      this.updateChart();
+      // Defer chart creation to ensure DOM is fully ready
+      setTimeout(() => this.updateChart(), 0);
     }
   }
 
   async ngOnChanges(changes: SimpleChanges) {
-    if (changes['photos'] && this.chartCanvas) {
-      await this.updateChart();
+    if (changes['photos']) {
+      // Wait for next tick to ensure canvas is available
+      setTimeout(() => this.updateChart(), 0);
     }
   }
 
   async updateChart() {
-    if (!this.chartCanvas || this.photos.length === 0) {
+    if (this.photos.length === 0) {
       return;
     }
 
+    if (!this.chartCanvas) {
+      if (this.retryCount < this.MAX_RETRIES) {
+        this.retryCount++;
+        console.warn(`Chart canvas not available in updateChart, retry ${this.retryCount}/${this.MAX_RETRIES}`);
+        // Try again after a short delay
+        setTimeout(() => this.updateChart(), 100);
+        return;
+      } else {
+        console.error('Chart canvas never became available after multiple retries');
+        this.error = 'Failed to initialize chart canvas';
+        return;
+      }
+    }
+
+    // Reset retry count on successful canvas access
+    this.retryCount = 0;
     this.loading = true;
     this.loadingProgress = 0;
     this.loadingTotal = this.photos.length;
