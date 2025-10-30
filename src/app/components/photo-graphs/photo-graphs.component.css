@@ -41,10 +41,13 @@
   padding: 1rem;
   border-radius: 0.25rem;
   box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  display: flex;
+  flex-direction: column;
 }
 
 .chart-wrapper canvas {
-  max-height: 100%;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .progress-bar-minimal {

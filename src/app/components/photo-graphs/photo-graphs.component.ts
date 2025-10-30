@@ -31,6 +31,7 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
   private chart: Chart | null = null;
   private retryCount = 0;
   private readonly MAX_RETRIES = 10;
+  private resizeObserver: ResizeObserver | null = null;
   loading = false;
   loadingProgress = 0;
   loadingTotal = 0;
@@ -71,13 +72,41 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
       this.chart = null;
     }
 
+    // Destroy existing resize observer if any
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
+
     // Create empty chart immediately
     this.createEmptyChart();
+
+    // Set up ResizeObserver to handle container resizing
+    this.setupResizeObserver();
 
     // Start loading metadata if we have photos
     if (this.photos.length > 0) {
       this.loadMetadataProgressively();
     }
+  }
+
+  private setupResizeObserver() {
+    if (!this.chartCanvas?.nativeElement || !this.chart) {
+      return;
+    }
+
+    // Observe the canvas container (chart-wrapper) for size changes
+    const container = this.chartCanvas.nativeElement.parentElement;
+    if (!container) return;
+
+    this.resizeObserver = new ResizeObserver(() => {
+      if (this.chart) {
+        // Trigger chart resize when container size changes
+        this.chart.resize();
+      }
+    });
+
+    this.resizeObserver.observe(container);
   }
 
   private async loadMetadataProgressively() {
@@ -397,6 +426,9 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
   ngOnDestroy() {
     if (this.chart) {
       this.chart.destroy();
+    }
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
     }
   }
 }
