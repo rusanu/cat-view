@@ -1,0 +1,36 @@
+<div class="photo-viewer-container">
+  <!-- No Photo Selected -->
+  <div *ngIf="!photo" class="no-photo">
+    <p class="text-muted">Select a photo to view</p>
+  </div>
+
+  <!-- Photo Display -->
+  <div *ngIf="photo" class="photo-display">
+    <!-- Toolbar -->
+    <div class="viewer-toolbar">
+      <div class="toolbar-info">
+        <strong>{{ photo.fileName }}</strong>
+        <span class="text-muted ms-3">{{ formatDateTime(photo.timestamp) }}</span>
+      </div>
+      <div class="toolbar-controls">
+        <button class="btn btn-sm btn-secondary" (click)="rotateCounterClockwise()" title="Rotate left 90°">
+          <span>↶ -90°</span>
+        </button>
+        <button class="btn btn-sm btn-secondary" (click)="resetRotation()" title="Reset rotation">
+          <span>⟲ Reset</span>
+        </button>
+        <button class="btn btn-sm btn-secondary" (click)="rotateClockwise()" title="Rotate right 90°">
+          <span>↷ +90°</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Image -->
+    <div class="image-container">
+      <img [src]="photo.url"
+           [alt]="photo.fileName"
+           class="main-photo"
+           [style.transform]="getRotationStyle()">
+    </div>
+  </div>
+</div>

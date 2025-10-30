@@ -1,0 +1,72 @@
+.photo-viewer-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.no-photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 1.2rem;
+}
+
+.photo-display {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.viewer-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #1a1a1a;
+  color: white;
+  border-bottom: 1px solid #444;
+}
+
+.toolbar-info {
+  flex: 1;
+}
+
+.toolbar-info .text-muted {
+  color: #aaa !important;
+}
+
+.toolbar-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.image-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.main-photo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .viewer-toolbar {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .toolbar-controls {
+    width: 100%;
+    justify-content: center;
+  }
+}
