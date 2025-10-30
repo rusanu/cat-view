@@ -12,7 +12,9 @@
 
   <!-- Chart (always visible once initialized) -->
   <div class="chart-wrapper">
-    <canvas #chartCanvas></canvas>
+    <div class="chart-container">
+      <canvas #chartCanvas></canvas>
+    </div>
 
     <!-- Minimal progress bar at bottom -->
     <div *ngIf="loading" class="progress-bar-minimal"

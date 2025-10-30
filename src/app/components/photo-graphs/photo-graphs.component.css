@@ -37,6 +37,7 @@
   flex: 1;
   position: relative;
   min-height: 0;
+  min-width: 0;
   background: white;
   padding: 1rem;
   border-radius: 0.25rem;
@@ -45,10 +46,14 @@
   flex-direction: column;
 }
 
-.chart-wrapper canvas {
-  width: 100% !important;
-  height: 100% !important;
+.chart-container {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+  min-width: 0;
 }
+
+/* Let Chart.js handle canvas sizing within container */
 
 .progress-bar-minimal {
   position: absolute;

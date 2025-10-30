@@ -95,14 +95,18 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
       return;
     }
 
-    // Observe the canvas container (chart-wrapper) for size changes
+    // Observe the chart-container div for size changes
     const container = this.chartCanvas.nativeElement.parentElement;
     if (!container) return;
 
-    this.resizeObserver = new ResizeObserver(() => {
-      if (this.chart) {
-        // Trigger chart resize when container size changes
-        this.chart.resize();
+    this.resizeObserver = new ResizeObserver((entries) => {
+      if (this.chart && entries.length > 0) {
+        // Use requestAnimationFrame to avoid layout thrashing
+        requestAnimationFrame(() => {
+          if (this.chart) {
+            this.chart.resize();
+          }
+        });
       }
     });
 
