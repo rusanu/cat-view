@@ -39,21 +39,14 @@
   min-height: 0;
   min-width: 0;
   background: white;
-  padding: 1rem;
   border-radius: 0.25rem;
   box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  display: flex;
-  flex-direction: column;
 }
 
 .chart-container {
-  flex: 1;
-  position: relative;
-  min-height: 0;
-  min-width: 0;
+  position: absolute;
+  inset: 1rem; /* 1rem padding on all sides */
 }
-
-/* Let Chart.js handle canvas sizing within container */
 
 .progress-bar-minimal {
   position: absolute;
