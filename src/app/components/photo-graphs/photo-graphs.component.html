@@ -1,29 +1,21 @@
 <div class="graphs-container">
-  <div *ngIf="loading" class="loading-state">
-    <div class="loading-content">
-      <span>Loading metadata files...</span>
-      <div class="progress-info">{{ loadingProgress }} / {{ loadingTotal }}</div>
-      <div class="progress">
-        <div class="progress-bar progress-bar-striped progress-bar-animated"
-             role="progressbar"
-             [style.width.%]="(loadingProgress / loadingTotal) * 100"
-             [attr.aria-valuenow]="loadingProgress"
-             [attr.aria-valuemin]="0"
-             [attr.aria-valuemax]="loadingTotal">
-        </div>
-      </div>
-    </div>
-  </div>
-
+  <!-- Error State -->
   <div *ngIf="error && !loading" class="error-state">
     <span class="text-danger">{{ error }}</span>
   </div>
 
-  <div *ngIf="warning && !loading && !error" class="warning-state">
+  <!-- Warning Banner -->
+  <div *ngIf="warning && !loading" class="warning-state">
     <span class="text-warning">⚠️ {{ warning }}</span>
   </div>
 
-  <div *ngIf="!loading && !error" class="chart-wrapper">
+  <!-- Chart (always visible once initialized) -->
+  <div class="chart-wrapper">
     <canvas #chartCanvas></canvas>
+
+    <!-- Minimal progress bar at bottom -->
+    <div *ngIf="loading" class="progress-bar-minimal"
+         [style.width.%]="(loadingProgress / loadingTotal) * 100">
+    </div>
   </div>
 </div>

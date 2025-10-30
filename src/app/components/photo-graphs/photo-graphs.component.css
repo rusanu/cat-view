@@ -7,7 +7,6 @@
   border-top: 1px solid #dee2e6;
 }
 
-.loading-state,
 .error-state,
 .warning-state {
   display: flex;
@@ -17,26 +16,9 @@
   text-align: center;
 }
 
-.loading-state,
 .error-state {
   height: 100%;
   padding: 2rem;
-}
-
-.loading-content {
-  width: 100%;
-  max-width: 400px;
-}
-
-.progress-info {
-  margin: 0.5rem 0;
-  font-size: 0.875rem;
-  color: #6c757d;
-}
-
-.progress {
-  height: 1.5rem;
-  margin-top: 0.5rem;
 }
 
 .warning-state {
@@ -59,4 +41,14 @@
 
 .chart-wrapper canvas {
   max-height: 100%;
+}
+
+.progress-bar-minimal {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
+  transition: width 0.2s ease;
+  z-index: 10;
 }

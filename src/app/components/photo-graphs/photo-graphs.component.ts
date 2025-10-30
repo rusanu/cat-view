@@ -40,58 +40,78 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
   constructor(private metadataService: MetadataService) {}
 
   ngAfterViewInit() {
-    if (this.photos.length > 0) {
-      // Defer chart creation to ensure DOM is fully ready
-      setTimeout(() => this.updateChart(), 0);
-    }
+    // Initialize empty chart immediately
+    setTimeout(() => this.initializeChart(), 0);
   }
 
   async ngOnChanges(changes: SimpleChanges) {
     if (changes['photos']) {
-      // Wait for next tick to ensure canvas is available
-      setTimeout(() => this.updateChart(), 0);
+      // Reinitialize chart with new photo set
+      setTimeout(() => {
+        this.initializeChart();
+        this.loadMetadataProgressively();
+      }, 0);
     }
   }
 
-  async updateChart() {
-    if (this.photos.length === 0) {
+  private initializeChart() {
+    if (!this.chartCanvas?.nativeElement) {
+      console.warn('Canvas not available for chart initialization');
       return;
     }
 
-    if (!this.chartCanvas) {
-      if (this.retryCount < this.MAX_RETRIES) {
-        this.retryCount++;
-        console.warn(`Chart canvas not available in updateChart, retry ${this.retryCount}/${this.MAX_RETRIES}`);
-        // Try again after a short delay
-        setTimeout(() => this.updateChart(), 100);
-        return;
-      } else {
-        console.error('Chart canvas never became available after multiple retries');
-        this.error = 'Failed to initialize chart canvas';
-        return;
-      }
+    // Destroy existing chart if any
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
     }
 
-    // Reset retry count on successful canvas access
-    this.retryCount = 0;
+    // Create empty chart immediately
+    this.createEmptyChart();
+
+    // Start loading metadata if we have photos
+    if (this.photos.length > 0) {
+      this.loadMetadataProgressively();
+    }
+  }
+
+  private async loadMetadataProgressively() {
+    if (!this.chart) {
+      console.warn('Chart not initialized, cannot load data');
+      return;
+    }
+
     this.loading = true;
     this.loadingProgress = 0;
     this.loadingTotal = this.photos.length;
     this.error = null;
     this.warning = null;
 
-    try {
-      // Load metadata for all photos
-      const dataPoints: GraphDataPoint[] = [];
-      let previousUptime: number | undefined;
-      let failedCount = 0;
+    const BATCH_SIZE = 5;
+    const dataPoints: GraphDataPoint[] = [];
+    let failedCount = 0;
+    let previousUptime: number | undefined;
 
-      for (const photo of this.photos) {
-        try {
-          const metadata = await this.metadataService.getMetadata(photo.key);
+    try {
+      // Process photos in batches of 5
+      for (let i = 0; i < this.photos.length; i += BATCH_SIZE) {
+        const batch = this.photos.slice(i, i + BATCH_SIZE);
+
+        // Fetch batch in parallel
+        const results = await Promise.allSettled(
+          batch.map(photo => this.metadataService.getMetadata(photo.key))
+        );
+
+        // Process results
+        for (let j = 0; j < results.length; j++) {
+          const photo = batch[j];
+          const result = results[j];
+
           this.loadingProgress++;
 
-          if (metadata) {
+          if (result.status === 'fulfilled' && result.value) {
+            const metadata = result.value;
+
             // Cat is considered present if motion was detected within last 5 minutes (300 seconds)
             const catPresent = metadata.seconds_since_last_motion < 300;
 
@@ -114,50 +134,34 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
           } else {
             failedCount++;
           }
-        } catch (error) {
-          console.warn('Failed to load metadata for', photo.key, error);
-          this.loadingProgress++;
-          failedCount++;
+        }
+
+        // Update chart after each batch
+        if (dataPoints.length > 0) {
+          // Sort by timestamp before updating
+          dataPoints.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+          this.updateChartData(dataPoints);
         }
       }
 
-      // Sort by timestamp
-      dataPoints.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-
-      // Show warning if some data points failed but we still have data
+      // Final status
       if (failedCount > 0) {
-        this.warning = `${failedCount} of ${this.photos.length} metadata files failed to load (corrupted or missing). Showing partial data.`;
+        this.warning = `${failedCount} of ${this.photos.length} metadata files failed to load. Showing partial data.`;
       }
 
-      // Only show error if we have no data at all
       if (dataPoints.length === 0) {
         this.error = 'No valid metadata found. All metadata files may be corrupted or missing.';
-        return;
       }
-
-      // Check canvas is still available after async loading
-      if (!this.chartCanvas || !this.chartCanvas.nativeElement) {
-        console.warn('Chart canvas not available after loading metadata');
-        return;
-      }
-
-      // Create the chart with whatever data we have
-      this.createChart(dataPoints);
     } catch (error) {
-      console.error('Error updating chart:', error);
+      console.error('Error loading metadata:', error);
       this.error = 'Failed to load graph data';
     } finally {
       this.loading = false;
     }
   }
 
-  private createChart(dataPoints: GraphDataPoint[]) {
-    if (this.chart) {
-      this.chart.destroy();
-    }
-
-    // Guard against canvas not being ready
-    if (!this.chartCanvas || !this.chartCanvas.nativeElement) {
+  private createEmptyChart() {
+    if (!this.chartCanvas?.nativeElement) {
       console.warn('Chart canvas not available');
       return;
     }
@@ -165,27 +169,14 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
     const ctx = this.chartCanvas.nativeElement.getContext('2d');
     if (!ctx) return;
 
-    const labels = dataPoints.map(p => p.timestamp);
-
-    // Prepare datasets
-    const temperatureData = dataPoints.map(p => p.temperature ?? null);
-    const humidityData = dataPoints.map(p => p.humidity ?? null);
-    const blanketData = dataPoints.map(p => p.blanketOn ? 1 : 0);
-    const catPresentData = dataPoints.map(p => p.catPresent ? 1 : 0);
-
-    // Find reboot indices
-    const rebootIndices = dataPoints
-      .map((p, i) => p.isReboot ? i : -1)
-      .filter(i => i >= 0);
-
     const config: ChartConfiguration = {
       type: 'line',
       data: {
-        labels: labels,
+        labels: [],
         datasets: [
           {
             label: 'Temperature (°C)',
-            data: temperatureData,
+            data: [],
             borderColor: 'rgb(255, 99, 132)',
             backgroundColor: 'rgba(255, 99, 132, 0.1)',
             yAxisID: 'y',
@@ -195,7 +186,7 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
           },
           {
             label: 'Humidity (%)',
-            data: humidityData,
+            data: [],
             borderColor: 'rgb(54, 162, 235)',
             backgroundColor: 'rgba(54, 162, 235, 0.1)',
             yAxisID: 'y',
@@ -205,7 +196,7 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
           },
           {
             label: 'Cat Present',
-            data: catPresentData,
+            data: [],
             borderColor: 'rgb(75, 192, 192)',
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
             yAxisID: 'y1',
@@ -216,7 +207,7 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
           },
           {
             label: 'Blanket On',
-            data: blanketData,
+            data: [],
             borderColor: 'rgb(255, 206, 86)',
             backgroundColor: 'rgba(255, 206, 86, 0.2)',
             yAxisID: 'y1',
@@ -247,13 +238,6 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
                   return new Date(date).toLocaleString();
                 }
                 return '';
-              },
-              afterBody: (items) => {
-                const index = items[0].dataIndex;
-                if (rebootIndices.includes(index)) {
-                  return ['⚠️ System Reboot Detected'];
-                }
-                return [];
               }
             }
           },
@@ -312,35 +296,31 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
     };
 
     this.chart = new Chart(ctx, config);
+  }
 
-    // Add reboot markers as vertical lines
-    if (rebootIndices.length > 0 && this.chart) {
-      const plugin = {
-        id: 'rebootMarkers',
-        afterDraw: (chart: Chart) => {
-          const ctx = chart.ctx;
-          const xAxis = chart.scales['x'];
-          const yAxis = chart.scales['y'];
-
-          rebootIndices.forEach(index => {
-            const x = xAxis.getPixelForValue(labels[index].getTime());
-
-            ctx.save();
-            ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            ctx.beginPath();
-            ctx.moveTo(x, yAxis.top);
-            ctx.lineTo(x, yAxis.bottom);
-            ctx.stroke();
-            ctx.restore();
-          });
-        }
-      };
-
-      this.chart.options.plugins = this.chart.options.plugins || {};
-      Chart.register(plugin);
+  private updateChartData(dataPoints: GraphDataPoint[]) {
+    if (!this.chart) {
+      console.warn('Chart not initialized, cannot update data');
+      return;
     }
+
+    // Update labels and datasets
+    this.chart.data.labels = dataPoints.map(p => p.timestamp);
+
+    // Temperature dataset
+    this.chart.data.datasets[0].data = dataPoints.map(p => p.temperature ?? null);
+
+    // Humidity dataset
+    this.chart.data.datasets[1].data = dataPoints.map(p => p.humidity ?? null);
+
+    // Cat Present dataset
+    this.chart.data.datasets[2].data = dataPoints.map(p => p.catPresent ? 1 : 0);
+
+    // Blanket On dataset
+    this.chart.data.datasets[3].data = dataPoints.map(p => p.blanketOn ? 1 : 0);
+
+    // Update the chart with new data (mode 'none' for smoother updates)
+    this.chart.update('none');
   }
 
   ngOnDestroy() {
