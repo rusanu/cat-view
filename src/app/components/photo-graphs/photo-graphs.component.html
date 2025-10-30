@@ -5,8 +5,9 @@
   </div>
 
   <!-- Warning Banner -->
-  <div *ngIf="warning && !loading" class="warning-state">
+  <div *ngIf="warning && !loading && !warningDismissed" class="warning-state">
     <span class="text-warning">⚠️ {{ warning }}</span>
+    <button type="button" class="btn-close btn-close-sm ms-auto" aria-label="Close" (click)="dismissWarning()"></button>
   </div>
 
   <!-- Chart (always visible once initialized) -->

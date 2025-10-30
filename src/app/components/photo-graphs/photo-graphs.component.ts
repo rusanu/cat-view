@@ -9,8 +9,8 @@ Chart.register(...registerables);
 
 interface GraphDataPoint {
   timestamp: Date;
-  temperature?: number;
-  humidity?: number;
+  temperature?: number | null;
+  humidity?: number | null;
   blanketOn?: boolean;
   catPresent?: boolean;
   uptime?: number;
@@ -36,8 +36,13 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
   loadingTotal = 0;
   error: string | null = null;
   warning: string | null = null;
+  warningDismissed = false;
 
   constructor(private metadataService: MetadataService) {}
+
+  dismissWarning() {
+    this.warningDismissed = true;
+  }
 
   ngAfterViewInit() {
     // Initialize empty chart immediately
@@ -86,6 +91,7 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
     this.loadingTotal = this.photos.length;
     this.error = null;
     this.warning = null;
+    this.warningDismissed = false;
 
     const BATCH_SIZE = 5;
     const dataPoints: GraphDataPoint[] = [];
@@ -182,7 +188,8 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
             yAxisID: 'y',
             tension: 0.1,
             pointRadius: 2,
-            pointHoverRadius: 5
+            pointHoverRadius: 5,
+            spanGaps: false // Don't connect points across large gaps
           },
           {
             label: 'Humidity (%)',
@@ -192,7 +199,8 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
             yAxisID: 'y',
             tension: 0.1,
             pointRadius: 2,
-            pointHoverRadius: 5
+            pointHoverRadius: 5,
+            spanGaps: false // Don't connect points across large gaps
           },
           {
             label: 'Cat Present',
@@ -243,7 +251,25 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
           },
           legend: {
             display: true,
-            position: 'top'
+            position: 'top',
+            labels: {
+              usePointStyle: false,
+              boxWidth: 40,
+              boxHeight: 2,
+              generateLabels: (chart) => {
+                const datasets = chart.data.datasets;
+                return datasets.map((dataset, i) => ({
+                  text: dataset.label || '',
+                  fillStyle: dataset.borderColor as string,
+                  strokeStyle: dataset.borderColor as string,
+                  lineWidth: 2,
+                  hidden: !chart.isDatasetVisible(i),
+                  datasetIndex: i,
+                  // For temp/humidity, show as line; for others, show as box
+                  pointStyle: i < 2 ? 'line' : 'rect'
+                }));
+              }
+            }
           }
         },
         scales: {
@@ -252,8 +278,14 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
             time: {
               unit: 'hour',
               displayFormats: {
-                hour: 'MMM d, HH:mm'
+                hour: 'HH:mm' // Just time for 24h data
               }
+            },
+            ticks: {
+              maxRotation: 45,
+              minRotation: 45,
+              autoSkip: true,
+              maxTicksLimit: 12 // Limit to ~12 labels to avoid crowding
             },
             title: {
               display: true,
@@ -304,23 +336,62 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
       return;
     }
 
+    // Fill gaps with null values for gaps > 1 hour
+    const filledData = this.fillDataGaps(dataPoints);
+
     // Update labels and datasets
-    this.chart.data.labels = dataPoints.map(p => p.timestamp);
+    this.chart.data.labels = filledData.map(p => p.timestamp);
 
-    // Temperature dataset
-    this.chart.data.datasets[0].data = dataPoints.map(p => p.temperature ?? null);
+    // Temperature dataset (null for gaps)
+    this.chart.data.datasets[0].data = filledData.map(p => p.temperature ?? null);
 
-    // Humidity dataset
-    this.chart.data.datasets[1].data = dataPoints.map(p => p.humidity ?? null);
+    // Humidity dataset (null for gaps)
+    this.chart.data.datasets[1].data = filledData.map(p => p.humidity ?? null);
 
-    // Cat Present dataset
-    this.chart.data.datasets[2].data = dataPoints.map(p => p.catPresent ? 1 : 0);
+    // Cat Present dataset (null for gaps)
+    this.chart.data.datasets[2].data = filledData.map(p =>
+      p.temperature === null ? null : (p.catPresent ? 1 : 0)
+    );
 
-    // Blanket On dataset
-    this.chart.data.datasets[3].data = dataPoints.map(p => p.blanketOn ? 1 : 0);
+    // Blanket On dataset (null for gaps)
+    this.chart.data.datasets[3].data = filledData.map(p =>
+      p.temperature === null ? null : (p.blanketOn ? 1 : 0)
+    );
 
     // Update the chart with new data (mode 'none' for smoother updates)
     this.chart.update('none');
+  }
+
+  private fillDataGaps(dataPoints: GraphDataPoint[]): GraphDataPoint[] {
+    if (dataPoints.length < 2) return dataPoints;
+
+    const GAP_THRESHOLD_MS = 60 * 60 * 1000; // 1 hour in milliseconds
+    const result: GraphDataPoint[] = [];
+
+    for (let i = 0; i < dataPoints.length; i++) {
+      result.push(dataPoints[i]);
+
+      // Check if there's a gap to the next point
+      if (i < dataPoints.length - 1) {
+        const currentTime = dataPoints[i].timestamp.getTime();
+        const nextTime = dataPoints[i + 1].timestamp.getTime();
+        const gap = nextTime - currentTime;
+
+        // If gap > 1 hour, insert a null point to break the line
+        if (gap > GAP_THRESHOLD_MS) {
+          result.push({
+            timestamp: new Date(currentTime + 1000), // 1 second after current
+            temperature: null,
+            humidity: null,
+            blanketOn: false,
+            catPresent: false,
+            uptime: undefined
+          });
+        }
+      }
+    }
+
+    return result;
   }
 
   ngOnDestroy() {

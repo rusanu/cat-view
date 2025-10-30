@@ -51,12 +51,22 @@
     <!-- Right Panel: Photo Viewer + Graphs -->
     <div class="photo-viewer-panel">
       <div class="viewer-content" [class.with-graphs]="showGraphs">
-        <div class="photo-section" [class.split]="showGraphs">
+        <div class="photo-section" [class.split]="showGraphs"
+             [style.height.%]="showGraphs ? photoSectionHeight : 100">
           <app-photo-viewer
             [photo]="selectedPhoto">
           </app-photo-viewer>
         </div>
-        <div *ngIf="showGraphs" class="graphs-section">
+
+        <!-- Vertical Divider (only when graphs shown) -->
+        <div *ngIf="showGraphs" class="vertical-divider"
+             (mousedown)="onVerticalDividerMouseDown($event)"
+             title="Drag to resize">
+          <div class="vertical-divider-handle"></div>
+        </div>
+
+        <div *ngIf="showGraphs" class="graphs-section"
+             [style.height.%]="100 - photoSectionHeight">
           <app-photo-graphs
             [photos]="photos">
           </app-photo-graphs>

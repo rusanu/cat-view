@@ -106,16 +106,48 @@
 }
 
 .photo-section.split {
-  flex: 0 0 50%;
+  flex: none; /* Use height from style binding */
   min-height: 0;
 }
 
 .graphs-section {
-  flex: 0 0 50%;
+  flex: none; /* Use height from style binding */
   min-height: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.vertical-divider {
+  height: 5px;
+  background-color: #dee2e6;
+  cursor: row-resize;
+  position: relative;
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+}
+
+.vertical-divider:hover {
+  background-color: #007bff;
+}
+
+.vertical-divider:active {
+  background-color: #0056b3;
+}
+
+.vertical-divider-handle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  height: 3px;
+  width: 60px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 2px;
+}
+
+.vertical-divider:hover .vertical-divider-handle {
+  background-color: rgba(255, 255, 255, 0.8);
 }
 
 /* Responsive layout */
