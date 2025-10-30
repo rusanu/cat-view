@@ -7,6 +7,10 @@
     <span class="text-danger">{{ error }}</span>
   </div>
 
+  <div *ngIf="warning && !loading && !error" class="warning-state">
+    <span class="text-warning">⚠️ {{ warning }}</span>
+  </div>
+
   <div *ngIf="!loading && !error" class="chart-wrapper">
     <canvas #chartCanvas></canvas>
   </div>

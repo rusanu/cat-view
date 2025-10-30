@@ -57,13 +57,19 @@ export class MetadataService {
         return null;
       }
 
-      // Parse JSON
-      const metadata: PhotoMetadata = JSON.parse(bodyText);
+      // Parse JSON with better error handling
+      try {
+        const metadata: PhotoMetadata = JSON.parse(bodyText);
 
-      // Cache the metadata
-      this.metadataCache.set(photoKey, metadata);
+        // Cache the metadata
+        this.metadataCache.set(photoKey, metadata);
 
-      return metadata;
+        return metadata;
+      } catch (jsonError: any) {
+        console.error('JSON parse error for', photoKey, ':', jsonError.message);
+        console.debug('Malformed JSON content:', bodyText.substring(0, 200));
+        return null;
+      }
     } catch (error: any) {
       console.error('Error fetching metadata for', photoKey, ':', error);
       return null;

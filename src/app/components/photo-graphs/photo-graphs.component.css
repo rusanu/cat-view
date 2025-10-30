@@ -8,13 +8,27 @@
 }
 
 .loading-state,
-.error-state {
+.error-state,
+.warning-state {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.loading-state,
+.error-state {
   height: 100%;
   padding: 2rem;
-  text-align: center;
+}
+
+.warning-state {
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 0.25rem;
+  margin: 0.5rem;
+  font-size: 0.875rem;
 }
 
 .chart-wrapper {

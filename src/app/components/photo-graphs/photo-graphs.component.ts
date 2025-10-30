@@ -31,6 +31,7 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit {
   private chart: Chart | null = null;
   loading = false;
   error: string | null = null;
+  warning: string | null = null;
 
   constructor(private metadataService: MetadataService) {}
 
@@ -53,11 +54,13 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit {
 
     this.loading = true;
     this.error = null;
+    this.warning = null;
 
     try {
       // Load metadata for all photos
       const dataPoints: GraphDataPoint[] = [];
       let previousUptime: number | undefined;
+      let failedCount = 0;
 
       for (const photo of this.photos) {
         try {
@@ -82,16 +85,30 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit {
             previousUptime = metadata.uptime_seconds;
 
             dataPoints.push(point);
+          } else {
+            failedCount++;
           }
         } catch (error) {
-          console.warn('Failed to load metadata for', photo.key);
+          console.warn('Failed to load metadata for', photo.key, error);
+          failedCount++;
         }
       }
 
       // Sort by timestamp
       dataPoints.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
-      // Create the chart
+      // Show warning if some data points failed but we still have data
+      if (failedCount > 0) {
+        this.warning = `${failedCount} of ${this.photos.length} metadata files failed to load (corrupted or missing). Showing partial data.`;
+      }
+
+      // Only show error if we have no data at all
+      if (dataPoints.length === 0) {
+        this.error = 'No valid metadata found. All metadata files may be corrupted or missing.';
+        return;
+      }
+
+      // Create the chart with whatever data we have
       this.createChart(dataPoints);
     } catch (error) {
       console.error('Error updating chart:', error);
