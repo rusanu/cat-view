@@ -1,7 +1,7 @@
 <div class="photo-grid-scroll">
   <div class="photo-grid">
     <div class="photo-item"
-         *ngFor="let photo of photos"
+         *ngFor="let photo of photos; trackBy: trackByKey"
          [class.selected]="isSelected(photo)"
          (click)="onPhotoClick(photo)">
       <img [src]="photo.url"

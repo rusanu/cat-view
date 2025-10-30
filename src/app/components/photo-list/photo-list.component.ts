@@ -22,6 +22,10 @@ export class PhotoListComponent {
     return this.selectedPhoto?.key === photo.key;
   }
 
+  trackByKey(index: number, photo: Photo): string {
+    return photo.key;
+  }
+
   formatTime(date: Date): string {
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',

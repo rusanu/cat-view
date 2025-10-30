@@ -32,6 +32,8 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
   private retryCount = 0;
   private readonly MAX_RETRIES = 10;
   private resizeObserver: ResizeObserver | null = null;
+  private lastPhotoCount = 0;
+  private allDataPoints: GraphDataPoint[] = [];
   loading = false;
   loadingProgress = 0;
   loadingTotal = 0;
@@ -52,11 +54,26 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
 
   async ngOnChanges(changes: SimpleChanges) {
     if (changes['photos']) {
-      // Reinitialize chart with new photo set
-      setTimeout(() => {
-        this.initializeChart();
-        this.loadMetadataProgressively();
-      }, 0);
+      const currentPhotoCount = this.photos.length;
+      const isIncremental = this.chart && currentPhotoCount > this.lastPhotoCount;
+
+      if (isIncremental) {
+        // Incremental update: only load metadata for new photos
+        const newPhotoCount = currentPhotoCount - this.lastPhotoCount;
+        console.log(`Incremental update: ${newPhotoCount} new photo(s)`);
+
+        setTimeout(() => {
+          this.loadNewPhotosMetadata(newPhotoCount);
+        }, 0);
+      } else {
+        // Full reload: initialize chart from scratch
+        setTimeout(() => {
+          this.initializeChart();
+          this.loadMetadataProgressively();
+        }, 0);
+      }
+
+      this.lastPhotoCount = currentPhotoCount;
     }
   }
 
@@ -77,6 +94,9 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
     }
+
+    // Reset data points for full reload
+    this.allDataPoints = [];
 
     // Create empty chart immediately
     this.createEmptyChart();
@@ -111,6 +131,76 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
     });
 
     this.resizeObserver.observe(container);
+  }
+
+  private async loadNewPhotosMetadata(newPhotoCount: number) {
+    if (!this.chart) {
+      console.warn('Chart not initialized, cannot load new data');
+      return;
+    }
+
+    this.loading = true;
+    const newPhotos = this.photos.slice(0, newPhotoCount);
+    const newDataPoints: GraphDataPoint[] = [];
+    let failedCount = 0;
+
+    try {
+      // Fetch metadata for all new photos in parallel (they're usually just 1-2)
+      const results = await Promise.allSettled(
+        newPhotos.map(photo => this.metadataService.getMetadata(photo.key))
+      );
+
+      // Get the last uptime from existing data for reboot detection
+      let previousUptime: number | undefined;
+      if (this.allDataPoints.length > 0) {
+        previousUptime = this.allDataPoints[this.allDataPoints.length - 1].uptime;
+      }
+
+      // Process results
+      for (let i = 0; i < results.length; i++) {
+        const photo = newPhotos[i];
+        const result = results[i];
+
+        if (result.status === 'fulfilled' && result.value) {
+          const metadata = result.value;
+          const catPresent = metadata.seconds_since_last_motion < 300;
+
+          const point: GraphDataPoint = {
+            timestamp: photo.timestamp,
+            temperature: metadata.temperature_celsius,
+            humidity: metadata.humidity_percent,
+            blanketOn: metadata.blanket_on,
+            catPresent: catPresent,
+            uptime: metadata.uptime_seconds
+          };
+
+          // Detect reboot
+          if (previousUptime !== undefined && metadata.uptime_seconds < previousUptime) {
+            point.isReboot = true;
+          }
+          previousUptime = metadata.uptime_seconds;
+
+          newDataPoints.push(point);
+        } else {
+          failedCount++;
+        }
+      }
+
+      // Prepend new data points to existing data
+      this.allDataPoints = [...newDataPoints, ...this.allDataPoints];
+
+      // Sort all data by timestamp
+      this.allDataPoints.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+      // Update chart with all data
+      this.updateChartData(this.allDataPoints);
+
+      console.log(`Added ${newDataPoints.length} new data point(s) to chart`);
+    } catch (error) {
+      console.error('Error loading new photo metadata:', error);
+    } finally {
+      this.loading = false;
+    }
   }
 
   private async loadMetadataProgressively() {
@@ -182,6 +272,9 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
           this.updateChartData(dataPoints);
         }
       }
+
+      // Store all data points for future incremental updates
+      this.allDataPoints = dataPoints;
 
       // Final status
       if (failedCount > 0) {
