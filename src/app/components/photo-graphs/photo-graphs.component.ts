@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, SimpleChanges, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import 'chartjs-adapter-date-fns';
@@ -24,7 +24,7 @@ interface GraphDataPoint {
   templateUrl: './photo-graphs.component.html',
   styleUrl: './photo-graphs.component.css'
 })
-export class PhotoGraphsComponent implements OnChanges, AfterViewInit {
+export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy {
   @Input() photos: Photo[] = [];
   @ViewChild('chartCanvas', { static: false }) chartCanvas!: ElementRef<HTMLCanvasElement>;
 
@@ -115,6 +115,12 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit {
         return;
       }
 
+      // Check canvas is still available after async loading
+      if (!this.chartCanvas || !this.chartCanvas.nativeElement) {
+        console.warn('Chart canvas not available after loading metadata');
+        return;
+      }
+
       // Create the chart with whatever data we have
       this.createChart(dataPoints);
     } catch (error) {
@@ -128,6 +134,12 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit {
   private createChart(dataPoints: GraphDataPoint[]) {
     if (this.chart) {
       this.chart.destroy();
+    }
+
+    // Guard against canvas not being ready
+    if (!this.chartCanvas || !this.chartCanvas.nativeElement) {
+      console.warn('Chart canvas not available');
+      return;
     }
 
     const ctx = this.chartCanvas.nativeElement.getContext('2d');
