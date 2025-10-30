@@ -16,6 +16,7 @@ export class PhotosComponent implements OnInit, OnDestroy {
   photos: Photo[] = [];
   selectedPhoto: Photo | null = null;
   loading = true;
+  refreshing = false; // Separate flag for incremental refresh
   error: string | null = null;
   startDate?: Date;
   endDate?: Date;
@@ -110,7 +111,7 @@ export class PhotosComponent implements OnInit, OnDestroy {
     // If we have photos already, only fetch new ones
     if (this.photos.length > 0) {
       try {
-        this.loading = true;
+        this.refreshing = true;
         this.error = null;
 
         // Get the latest photo timestamp
@@ -136,7 +137,7 @@ export class PhotosComponent implements OnInit, OnDestroy {
         this.error = err.message || 'Failed to refresh photos';
         console.error('Error refreshing photos:', err);
       } finally {
-        this.loading = false;
+        this.refreshing = false;
       }
     } else {
       // No photos yet, do a full load

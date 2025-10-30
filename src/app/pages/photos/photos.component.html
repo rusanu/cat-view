@@ -32,10 +32,10 @@
         <div class="header-actions">
           <button class="btn btn-sm btn-outline-secondary"
                   (click)="refreshPhotos()"
-                  [disabled]="loading"
+                  [disabled]="refreshing"
                   title="Refresh photos">
-            <span *ngIf="!loading">🔄</span>
-            <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+            <span *ngIf="!refreshing">🔄</span>
+            <span *ngIf="refreshing" class="spinner-border spinner-border-sm"></span>
           </button>
           <button class="btn btn-sm"
                   [class.btn-success]="autoRefresh"
