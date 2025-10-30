@@ -41,6 +41,11 @@ export class PhotoListComponent {
     });
   }
 
+  onImageLoad(event: Event) {
+    const img = event.target as HTMLImageElement;
+    img.classList.add('loaded');
+  }
+
   onImageError(event: Event) {
     const img = event.target as HTMLImageElement;
     console.error('Failed to load image:', img.src);

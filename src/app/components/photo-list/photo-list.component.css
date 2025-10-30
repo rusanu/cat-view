@@ -36,6 +36,12 @@
   object-fit: cover;
   display: block;
   background-color: #e9ecef;
+  opacity: 0;
+  transition: opacity 0.3s ease-in;
+}
+
+.thumbnail.loaded {
+  opacity: 1;
 }
 
 .photo-time-overlay {

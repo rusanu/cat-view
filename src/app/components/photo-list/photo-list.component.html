@@ -8,6 +8,7 @@
            [alt]="photo.fileName"
            class="thumbnail"
            loading="lazy"
+           (load)="onImageLoad($event)"
            (error)="onImageError($event)">
       <div class="photo-time-overlay">
         {{ formatTime(photo.timestamp) }}

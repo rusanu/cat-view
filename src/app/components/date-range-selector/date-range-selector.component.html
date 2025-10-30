@@ -1,0 +1,28 @@
+<div class="date-range-selector">
+  <div class="quick-actions">
+    <button class="btn btn-sm btn-outline-secondary" (click)="setToday()">Today</button>
+    <button class="btn btn-sm btn-outline-secondary" (click)="setLast24Hours()">24h</button>
+    <button class="btn btn-sm btn-outline-secondary" (click)="setLast7Days()">7d</button>
+    <button class="btn btn-sm btn-outline-secondary" (click)="setLast30Days()">30d</button>
+  </div>
+
+  <div class="date-inputs">
+    <div class="date-input-group">
+      <label for="startDate">From:</label>
+      <input type="date"
+             id="startDate"
+             class="form-control form-control-sm"
+             [(ngModel)]="startDateStr"
+             (change)="onDateChange()">
+    </div>
+
+    <div class="date-input-group">
+      <label for="endDate">To:</label>
+      <input type="date"
+             id="endDate"
+             class="form-control form-control-sm"
+             [(ngModel)]="endDateStr"
+             (change)="onDateChange()">
+    </div>
+  </div>
+</div>

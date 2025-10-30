@@ -4,11 +4,12 @@ import { PhotoService, Photo } from '../../services/photo.service';
 import { PhotoListComponent } from '../../components/photo-list/photo-list.component';
 import { PhotoViewerComponent } from '../../components/photo-viewer/photo-viewer.component';
 import { PhotoGraphsComponent } from '../../components/photo-graphs/photo-graphs.component';
+import { DateRangeSelectorComponent, DateRange } from '../../components/date-range-selector/date-range-selector.component';
 
 @Component({
   selector: 'app-photos',
   standalone: true,
-  imports: [CommonModule, PhotoListComponent, PhotoViewerComponent, PhotoGraphsComponent],
+  imports: [CommonModule, PhotoListComponent, PhotoViewerComponent, PhotoGraphsComponent, DateRangeSelectorComponent],
   templateUrl: './photos.component.html',
   styleUrl: './photos.component.css'
 })
@@ -97,9 +98,9 @@ export class PhotosComponent implements OnInit, OnDestroy {
     this.selectedPhoto = photo;
   }
 
-  async onDateRangeChanged(startDate: Date, endDate: Date) {
-    this.startDate = startDate;
-    this.endDate = endDate;
+  async onDateRangeChanged(dateRange: DateRange) {
+    this.startDate = dateRange.startDate;
+    this.endDate = dateRange.endDate;
     await this.loadPhotos();
   }
 

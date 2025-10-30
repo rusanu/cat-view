@@ -27,7 +27,9 @@
       <div class="panel-header">
         <div class="header-content">
           <h5>Photos ({{ photos.length }})</h5>
-          <small class="text-muted">Last 24 hours</small>
+          <app-date-range-selector
+            (dateRangeChanged)="onDateRangeChanged($event)">
+          </app-date-range-selector>
         </div>
         <div class="header-actions">
           <button class="btn btn-sm btn-outline-secondary"
