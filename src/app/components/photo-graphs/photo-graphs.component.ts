@@ -330,7 +330,7 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
             data: [],
             borderColor: 'rgb(255, 99, 132)',
             backgroundColor: 'rgba(255, 99, 132, 0.1)',
-            yAxisID: 'y',
+            yAxisID: 'yTemp',
             tension: 0.1,
             pointRadius: 2,
             pointHoverRadius: 5,
@@ -341,7 +341,7 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
             data: [],
             borderColor: 'rgb(54, 162, 235)',
             backgroundColor: 'rgba(54, 162, 235, 0.1)',
-            yAxisID: 'y',
+            yAxisID: 'yHumidity',
             tension: 0.1,
             pointRadius: 2,
             pointHoverRadius: 5,
@@ -442,16 +442,29 @@ export class PhotoGraphsComponent implements OnChanges, AfterViewInit, OnDestroy
               text: 'Time'
             }
           },
-          y: {
+          yTemp: {
             type: 'linear',
             display: true,
             position: 'left',
             title: {
               display: true,
-              text: 'Temperature (°C) / Humidity (%)'
+              text: 'Temperature (°C)'
+            }
+            // Auto-scale - no fixed min/max
+          },
+          yHumidity: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            title: {
+              display: true,
+              text: 'Humidity (%)'
             },
             min: 0,
-            max: 100
+            max: 100,
+            grid: {
+              drawOnChartArea: false // Don't draw grid lines to avoid clutter
+            }
           },
           y1: {
             type: 'linear',
