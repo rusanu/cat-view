@@ -36,4 +36,12 @@ export class PhotoListComponent {
       day: 'numeric'
     });
   }
+
+  onImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    console.error('Failed to load image:', img.src);
+    // Set a placeholder or show error
+    img.style.backgroundColor = '#f8f9fa';
+    img.alt = 'Failed to load';
+  }
 }

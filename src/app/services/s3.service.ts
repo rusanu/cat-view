@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { S3Client, ListObjectsV2Command, GetObjectCommand, ListObjectsV2CommandOutput } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { environment } from '../../environments/environment.development';
 
 @Injectable({
@@ -9,6 +10,7 @@ export class S3Service {
   private s3Client: S3Client;
   private bucketName: string;
   private bucketFolder: string;
+  private urlCache: Map<string, { url: string, expires: number }> = new Map();
 
   constructor() {
     this.bucketName = environment.aws.bucketName;
@@ -40,10 +42,34 @@ export class S3Service {
   }
 
   /**
-   * Get a signed URL for an object (for direct browser access)
+   * Get a pre-signed URL for an object (for direct browser access)
+   * URLs are cached and valid for 1 hour
    */
-  getObjectUrl(key: string): string {
-    return `https://${this.bucketName}.s3.${environment.aws.region}.amazonaws.com/${key}`;
+  async getPresignedUrl(key: string): Promise<string> {
+    // Check cache first
+    const cached = this.urlCache.get(key);
+    const now = Date.now();
+
+    if (cached && cached.expires > now) {
+      return cached.url;
+    }
+
+    // Generate new pre-signed URL (valid for 1 hour)
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: key
+    });
+
+    const url = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
+
+    // Cache the URL
+    this.urlCache.set(key, {
+      url,
+      expires: now + (3600 * 1000) // 1 hour from now
+    });
+
+    console.log('Generated pre-signed URL for:', key);
+    return url;
   }
 
   /**

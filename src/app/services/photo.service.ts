@@ -65,36 +65,40 @@ export class PhotoService {
       return [];
     }
 
-    // Filter and map to Photo objects
-    const photos: Photo[] = response.Contents
-      .filter(obj => {
-        const key = obj.Key || '';
-        const fileName = key.split('/').pop() || '';
+    // Filter objects first
+    const filteredObjects = response.Contents.filter(obj => {
+      const key = obj.Key || '';
+      const fileName = key.split('/').pop() || '';
 
-        // Only include .jpg files matching the pattern
-        if (!this.PHOTO_PATTERN.test(fileName)) {
-          return false;
-        }
+      // Only include .jpg files matching the pattern
+      if (!this.PHOTO_PATTERN.test(fileName)) {
+        return false;
+      }
 
-        // Parse timestamp and filter by date range
-        const timestamp = this.parseFileName(fileName);
-        if (!timestamp) return false;
+      // Parse timestamp and filter by date range
+      const timestamp = this.parseFileName(fileName);
+      if (!timestamp) return false;
 
-        return timestamp >= startDate! && timestamp <= endDate!;
-      })
-      .map(obj => {
+      return timestamp >= startDate! && timestamp <= endDate!;
+    });
+
+    // Generate pre-signed URLs for all photos (in parallel)
+    const photos: Photo[] = await Promise.all(
+      filteredObjects.map(async obj => {
         const key = obj.Key!;
         const fileName = key.split('/').pop()!;
         const timestamp = this.parseFileName(fileName)!;
+        const url = await this.s3Service.getPresignedUrl(key);
 
         return {
           key,
           fileName,
           timestamp,
-          url: this.s3Service.getObjectUrl(key),
+          url,
           size: obj.Size
         };
-      });
+      })
+    );
 
     // Sort by timestamp (newest first)
     photos.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());

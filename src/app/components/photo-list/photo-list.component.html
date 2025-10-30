@@ -1,17 +1,17 @@
-<div class="photo-list-scroll">
-  <div class="photo-item"
-       *ngFor="let photo of photos"
-       [class.selected]="isSelected(photo)"
-       (click)="onPhotoClick(photo)">
-    <div class="thumbnail-wrapper">
+<div class="photo-grid-scroll">
+  <div class="photo-grid">
+    <div class="photo-item"
+         *ngFor="let photo of photos"
+         [class.selected]="isSelected(photo)"
+         (click)="onPhotoClick(photo)">
       <img [src]="photo.url"
            [alt]="photo.fileName"
            class="thumbnail"
-           loading="lazy">
-    </div>
-    <div class="photo-info">
-      <div class="photo-time">{{ formatTime(photo.timestamp) }}</div>
-      <div class="photo-date text-muted">{{ formatDate(photo.timestamp) }}</div>
+           loading="lazy"
+           (error)="onImageError($event)">
+      <div class="photo-time-overlay">
+        {{ formatTime(photo.timestamp) }}
+      </div>
     </div>
   </div>
 </div>
