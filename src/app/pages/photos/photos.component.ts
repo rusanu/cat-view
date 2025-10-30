@@ -107,7 +107,41 @@ export class PhotosComponent implements OnInit, OnDestroy {
   }
 
   async refreshPhotos() {
-    await this.loadPhotos();
+    // If we have photos already, only fetch new ones
+    if (this.photos.length > 0) {
+      try {
+        this.loading = true;
+        this.error = null;
+
+        // Get the latest photo timestamp
+        const latestTimestamp = this.photos[0].timestamp; // Photos are sorted newest first
+
+        // Fetch only new photos
+        const newPhotos = await this.photoService.getNewPhotosSince(latestTimestamp);
+
+        if (newPhotos.length > 0) {
+          // Prepend new photos to the list
+          this.photos = [...newPhotos, ...this.photos];
+
+          // If no photo is selected yet, select the first (newest) one
+          if (!this.selectedPhoto) {
+            this.selectedPhoto = this.photos[0];
+          }
+
+          console.log(`Refresh: Added ${newPhotos.length} new photo(s)`);
+        } else {
+          console.log('Refresh: No new photos found');
+        }
+      } catch (err: any) {
+        this.error = err.message || 'Failed to refresh photos';
+        console.error('Error refreshing photos:', err);
+      } finally {
+        this.loading = false;
+      }
+    } else {
+      // No photos yet, do a full load
+      await this.loadPhotos();
+    }
   }
 
   toggleAutoRefresh() {

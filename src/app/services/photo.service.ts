@@ -114,6 +114,63 @@ export class PhotoService {
   }
 
   /**
+   * Get only new photos since a specific timestamp
+   * Used for incremental refresh
+   * @param sinceTimestamp Only return photos newer than this
+   * @param maxPhotos Maximum number of photos to return
+   */
+  async getNewPhotosSince(sinceTimestamp: Date, maxPhotos: number = 1000): Promise<Photo[]> {
+    const now = new Date();
+
+    // List all objects
+    const response = await this.s3Service.listObjects('', maxPhotos);
+
+    if (!response.Contents) {
+      return [];
+    }
+
+    // Filter for photos newer than sinceTimestamp
+    const filteredObjects = response.Contents.filter(obj => {
+      const key = obj.Key || '';
+      const fileName = key.split('/').pop() || '';
+
+      // Only include .jpg files matching the pattern
+      if (!this.PHOTO_PATTERN.test(fileName)) {
+        return false;
+      }
+
+      // Parse timestamp and filter for newer photos
+      const timestamp = this.parseFileName(fileName);
+      if (!timestamp) return false;
+
+      return timestamp > sinceTimestamp && timestamp <= now;
+    });
+
+    // Generate pre-signed URLs for new photos (in parallel)
+    const photos: Photo[] = await Promise.all(
+      filteredObjects.map(async obj => {
+        const key = obj.Key!;
+        const fileName = key.split('/').pop()!;
+        const timestamp = this.parseFileName(fileName)!;
+        const url = await this.s3Service.getPresignedUrl(key);
+
+        return {
+          key,
+          fileName,
+          timestamp,
+          url,
+          size: obj.Size
+        };
+      })
+    );
+
+    // Sort by timestamp (newest first)
+    photos.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    return photos;
+  }
+
+  /**
    * Get the metadata JSON file key for a photo
    */
   getMetadataKey(photoKey: string): string {
