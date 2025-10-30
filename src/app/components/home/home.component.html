@@ -1,0 +1,57 @@
+<div class="container mt-4">
+  <h1>Cat View - Photo Monitor</h1>
+
+  <div class="card mt-4">
+    <div class="card-header">
+      <h5>S3 Connection Status</h5>
+    </div>
+    <div class="card-body">
+      <div *ngIf="connectionStatus === 'testing'" class="alert alert-info">
+        <div class="spinner-border spinner-border-sm me-2" role="status">
+          <span class="visually-hidden">Testing...</span>
+        </div>
+        Testing S3 connection...
+      </div>
+
+      <div *ngIf="connectionStatus === 'success'" class="alert alert-success">
+        <h6 class="alert-heading">✓ Connection Successful!</h6>
+        <p class="mb-0">Connected to S3 bucket. Found {{ objectCount }} objects.</p>
+        <hr *ngIf="sampleObjects.length > 0">
+        <div *ngIf="sampleObjects.length > 0">
+          <p class="mb-2"><strong>Sample files:</strong></p>
+          <ul class="mb-0">
+            <li *ngFor="let obj of sampleObjects">{{ obj }}</li>
+          </ul>
+        </div>
+      </div>
+
+      <div *ngIf="connectionStatus === 'error'" class="alert alert-danger">
+        <h6 class="alert-heading">✗ Connection Failed</h6>
+        <p class="mb-2">{{ errorMessage }}</p>
+        <hr>
+        <p class="mb-2"><strong>Common issues:</strong></p>
+        <ul>
+          <li>Missing or incorrect .env file configuration</li>
+          <li>Invalid AWS credentials</li>
+          <li>Incorrect bucket name or region</li>
+          <li>CORS configuration needed for browser access</li>
+        </ul>
+        <button class="btn btn-sm btn-danger" (click)="retryConnection()">Retry Connection</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-header">
+      <h5>Setup Instructions</h5>
+    </div>
+    <div class="card-body">
+      <ol>
+        <li>Copy <code>.env.example</code> to <code>.env</code></li>
+        <li>Fill in your AWS S3 credentials and bucket information</li>
+        <li>Configure CORS on your S3 bucket to allow browser access</li>
+        <li>Restart the development server (<code>ng serve</code>)</li>
+      </ol>
+    </div>
+  </div>
+</div>

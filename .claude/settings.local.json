@@ -14,7 +14,8 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nInitialize Angular 17 LTS project with TypeScript and ESLint\n\nSet up foundational Angular application structure to enable development of the cat photo viewer. Configured strict TypeScript settings and ESLint with Angular-specific rules to ensure code quality from the start.\n\nCompleted: cat-view-14, cat-view-15\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git commit:*)",
-      "Bash(npx ng generate:*)"
+      "Bash(npx ng generate:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []
