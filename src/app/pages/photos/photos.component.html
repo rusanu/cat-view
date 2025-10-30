@@ -25,8 +25,14 @@
     <!-- Left Panel: Photo List (Thumbnails) -->
     <div class="photo-list-panel" [style.width.px]="leftPanelWidth">
       <div class="panel-header">
-        <h5>Photos ({{ photos.length }})</h5>
-        <small class="text-muted">Last 24 hours</small>
+        <div class="header-content">
+          <h5>Photos ({{ photos.length }})</h5>
+          <small class="text-muted">Last 24 hours</small>
+        </div>
+        <button class="btn btn-sm btn-outline-primary" (click)="toggleGraphs()">
+          <span *ngIf="!showGraphs">📊 Show Graphs</span>
+          <span *ngIf="showGraphs">📊 Hide Graphs</span>
+        </button>
       </div>
       <app-photo-list class="photo-list-container"
         [photos]="photos"
@@ -42,11 +48,20 @@
       <div class="divider-handle"></div>
     </div>
 
-    <!-- Right Panel: Photo Viewer -->
+    <!-- Right Panel: Photo Viewer + Graphs -->
     <div class="photo-viewer-panel">
-      <app-photo-viewer
-        [photo]="selectedPhoto">
-      </app-photo-viewer>
+      <div class="viewer-content" [class.with-graphs]="showGraphs">
+        <div class="photo-section" [class.split]="showGraphs">
+          <app-photo-viewer
+            [photo]="selectedPhoto">
+          </app-photo-viewer>
+        </div>
+        <div *ngIf="showGraphs" class="graphs-section">
+          <app-photo-graphs
+            [photos]="photos">
+          </app-photo-graphs>
+        </div>
+      </div>
     </div>
   </div>
 </div>

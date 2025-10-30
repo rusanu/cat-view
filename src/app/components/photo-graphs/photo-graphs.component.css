@@ -1,0 +1,32 @@
+.graphs-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+}
+
+.loading-state,
+.error-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 2rem;
+  text-align: center;
+}
+
+.chart-wrapper {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+  background: white;
+  padding: 1rem;
+  border-radius: 0.25rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.chart-wrapper canvas {
+  max-height: 100%;
+}

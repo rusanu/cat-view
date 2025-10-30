@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { PhotoService, Photo } from '../../services/photo.service';
 import { PhotoListComponent } from '../../components/photo-list/photo-list.component';
 import { PhotoViewerComponent } from '../../components/photo-viewer/photo-viewer.component';
+import { PhotoGraphsComponent } from '../../components/photo-graphs/photo-graphs.component';
 
 @Component({
   selector: 'app-photos',
   standalone: true,
-  imports: [CommonModule, PhotoListComponent, PhotoViewerComponent],
+  imports: [CommonModule, PhotoListComponent, PhotoViewerComponent, PhotoGraphsComponent],
   templateUrl: './photos.component.html',
   styleUrl: './photos.component.css'
 })
@@ -18,6 +19,7 @@ export class PhotosComponent implements OnInit, OnDestroy {
   error: string | null = null;
   startDate?: Date;
   endDate?: Date;
+  showGraphs = false; // Toggle for showing graphs
 
   // Panel resizing
   leftPanelWidth = 350; // Default width
@@ -73,6 +75,10 @@ export class PhotosComponent implements OnInit, OnDestroy {
     this.startDate = startDate;
     this.endDate = endDate;
     await this.loadPhotos();
+  }
+
+  toggleGraphs() {
+    this.showGraphs = !this.showGraphs;
   }
 
   // Panel resizing methods

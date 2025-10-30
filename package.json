@@ -24,6 +24,9 @@
     "@aws-sdk/s3-request-presigner": "^3.920.0",
     "@popperjs/core": "^2.11.8",
     "bootstrap": "^5.3.8",
+    "chart.js": "^4.5.1",
+    "chartjs-adapter-date-fns": "^3.0.0",
+    "date-fns": "^4.1.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.3"

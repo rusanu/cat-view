@@ -1,0 +1,13 @@
+<div class="graphs-container">
+  <div *ngIf="loading" class="loading-state">
+    <span>Loading graph data...</span>
+  </div>
+
+  <div *ngIf="error && !loading" class="error-state">
+    <span class="text-danger">{{ error }}</span>
+  </div>
+
+  <div *ngIf="!loading && !error" class="chart-wrapper">
+    <canvas #chartCanvas></canvas>
+  </div>
+</div>
