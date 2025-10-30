@@ -23,7 +23,7 @@
   <!-- Split Panel Layout -->
   <div *ngIf="!loading && !error && photos.length > 0" class="split-panel">
     <!-- Left Panel: Photo List (Thumbnails) -->
-    <div class="photo-list-panel">
+    <div class="photo-list-panel" [style.width.px]="leftPanelWidth">
       <div class="panel-header">
         <h5>Photos ({{ photos.length }})</h5>
         <small class="text-muted">Last 24 hours</small>
@@ -33,6 +33,13 @@
         [selectedPhoto]="selectedPhoto"
         (photoSelected)="onPhotoSelected($event)">
       </app-photo-list>
+    </div>
+
+    <!-- Draggable Divider -->
+    <div class="panel-divider"
+         (mousedown)="onDividerMouseDown($event)"
+         title="Drag to resize">
+      <div class="divider-handle"></div>
     </div>
 
     <!-- Right Panel: Photo Viewer -->

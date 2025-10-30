@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PhotoService, Photo } from '../../services/photo.service';
 import { PhotoListComponent } from '../../components/photo-list/photo-list.component';
@@ -11,7 +11,7 @@ import { PhotoViewerComponent } from '../../components/photo-viewer/photo-viewer
   templateUrl: './photos.component.html',
   styleUrl: './photos.component.css'
 })
-export class PhotosComponent implements OnInit {
+export class PhotosComponent implements OnInit, OnDestroy {
   photos: Photo[] = [];
   selectedPhoto: Photo | null = null;
   loading = true;
@@ -19,10 +19,32 @@ export class PhotosComponent implements OnInit {
   startDate?: Date;
   endDate?: Date;
 
-  constructor(private photoService: PhotoService) {}
+  // Panel resizing
+  leftPanelWidth = 350; // Default width
+  private isDragging = false;
+  private readonly MIN_PANEL_WIDTH = 200;
+  private readonly MAX_PANEL_WIDTH = 800;
+  private readonly PANEL_WIDTH_KEY = 'photo-panel-width';
+
+  constructor(private photoService: PhotoService) {
+    // Load saved panel width from localStorage
+    const savedWidth = localStorage.getItem(this.PANEL_WIDTH_KEY);
+    if (savedWidth) {
+      this.leftPanelWidth = parseInt(savedWidth, 10);
+    }
+  }
 
   async ngOnInit() {
     await this.loadPhotos();
+    // Add global mouse event listeners
+    document.addEventListener('mousemove', this.onMouseMove);
+    document.addEventListener('mouseup', this.onMouseUp);
+  }
+
+  ngOnDestroy() {
+    // Clean up event listeners
+    document.removeEventListener('mousemove', this.onMouseMove);
+    document.removeEventListener('mouseup', this.onMouseUp);
   }
 
   async loadPhotos() {
@@ -52,4 +74,35 @@ export class PhotosComponent implements OnInit {
     this.endDate = endDate;
     await this.loadPhotos();
   }
+
+  // Panel resizing methods
+  onDividerMouseDown(event: MouseEvent) {
+    event.preventDefault();
+    this.isDragging = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }
+
+  private onMouseMove = (event: MouseEvent) => {
+    if (!this.isDragging) return;
+
+    // Calculate new width based on mouse position
+    const newWidth = event.clientX;
+
+    // Clamp between min and max
+    if (newWidth >= this.MIN_PANEL_WIDTH && newWidth <= this.MAX_PANEL_WIDTH) {
+      this.leftPanelWidth = newWidth;
+    }
+  };
+
+  private onMouseUp = () => {
+    if (this.isDragging) {
+      this.isDragging = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+
+      // Save to localStorage
+      localStorage.setItem(this.PANEL_WIDTH_KEY, this.leftPanelWidth.toString());
+    }
+  };
 }

@@ -9,11 +9,12 @@
 }
 
 .photo-list-panel {
-  width: 350px;
-  border-right: 1px solid #dee2e6;
+  /* Width is now controlled by component */
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   background-color: #f8f9fa;
+  overflow: hidden;
 }
 
 .panel-header {
@@ -32,6 +33,38 @@
   margin-top: 0.25rem;
 }
 
+.panel-divider {
+  width: 5px;
+  background-color: #dee2e6;
+  cursor: col-resize;
+  position: relative;
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+}
+
+.panel-divider:hover {
+  background-color: #007bff;
+}
+
+.panel-divider:active {
+  background-color: #0056b3;
+}
+
+.divider-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 60px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 2px;
+}
+
+.panel-divider:hover .divider-handle {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
 .photo-viewer-panel {
   flex: 1;
   overflow: hidden;
@@ -45,10 +78,14 @@
   }
 
   .photo-list-panel {
-    width: 100%;
+    width: 100% !important;
     height: 40%;
     border-right: none;
     border-bottom: 1px solid #dee2e6;
+  }
+
+  .panel-divider {
+    display: none;
   }
 
   .photo-viewer-panel {
