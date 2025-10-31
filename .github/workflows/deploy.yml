@@ -42,8 +42,8 @@ jobs:
       - name: Build for GitHub Pages (subdirectory)
         run: npm run build -- --base-href /cat-view/
 
-      - name: Fix base href in 404.html for subdirectory
-        run: sed -i 's|<base href="/">|<base href="/cat-view/">|g' dist/cat-view-app/browser/404.html
+      - name: Copy index.html to 404.html
+        run: cp dist/index.html dist/404.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
