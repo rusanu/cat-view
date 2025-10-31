@@ -24,18 +24,17 @@ export class CognitoAuthService {
 
     // Check if the OAuth token is expired or about to expire
     if (this.authService.isTokenExpiringSoon()) {
-      console.log('OAuth token is expiring soon, attempting refresh...');
+      console.log('OAuth token is expiring soon, attempting silent refresh...');
 
-      // Check if we have a refresh token (users logged in before offline_access was enabled won't have one)
-      if (!this.authService.hasRefreshToken()) {
-        console.warn('No refresh token available. User needs to re-authenticate.');
-        throw new Error('Your session needs to be refreshed. Please sign in again to continue.');
-      }
-
+      // Try silent refresh (may fail if Google session expired or user interaction required)
       const refreshed = await this.authService.refreshToken();
+
       if (!refreshed) {
-        throw new Error('Failed to refresh OAuth token. Please sign in again.');
+        console.warn('Silent token refresh failed. User needs to re-authenticate.');
+        throw new Error('Your session has expired. Please sign in again to continue.');
       }
+
+      console.log('Token refreshed successfully, proceeding with Cognito exchange');
     }
 
     // Get the Google ID token from the auth service
@@ -71,19 +70,14 @@ export class CognitoAuthService {
         error.message.includes('Invalid') ||
         error.message.includes('expired')
       )) {
-        console.log('Token error detected, attempting refresh...');
-
-        // Check if we have a refresh token before attempting refresh
-        if (!this.authService.hasRefreshToken()) {
-          console.warn('No refresh token available for retry. User needs to re-authenticate.');
-          throw new Error('Your session has expired and cannot be refreshed. Please sign in again.');
-        }
+        console.log('Token error detected, attempting silent refresh...');
 
         const refreshed = await this.authService.refreshToken();
         if (refreshed) {
           // Retry with the new token
           const newIdToken = this.authService.getIdToken();
           if (newIdToken) {
+            console.log('Retrying Cognito exchange with refreshed token');
             const retryProvider = fromCognitoIdentityPool({
               clientConfig: { region: environment.aws.region },
               identityPoolId: environment.cognito.identityPoolId,
@@ -94,6 +88,9 @@ export class CognitoAuthService {
             this.cachedCredentials = await retryProvider();
             return this.cachedCredentials;
           }
+        } else {
+          console.warn('Silent refresh failed during retry. User needs to re-authenticate.');
+          throw new Error('Your session has expired. Please sign in again.');
         }
       }
 

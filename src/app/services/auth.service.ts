@@ -26,39 +26,34 @@ export class AuthService {
       redirectUri: this.getRedirectUri(),
       scope: 'openid profile email',
       showDebugInformation: !environment.production,
-      // Request refresh token from Google
-      responseType: 'code',
-      // Use PKCE for security (required for public clients)
-      useSilentRefresh: true,
-      // Timeout for silent refresh (ms)
-      silentRefreshTimeout: 20000,
-      // Custom parameters for Google OAuth
+      // Use implicit flow for SPAs - it's designed for browser-based apps
+      // Code flow with PKCE requires backend support for token refresh in practice
+      responseType: 'id_token token',
+      // Configure silent refresh (will use iframe with prompt=none)
+      silentRefreshRedirectUri: this.getRedirectUri(),
+      silentRefreshTimeout: 10000, // 10 second timeout for silent refresh
+      // For Google, we need to use prompt=none for silent refresh attempts
       customQueryParams: {
-        'access_type': 'offline', // Request refresh token
-        'prompt': 'consent' // Ensure refresh token is granted (may require on first login)
+        'access_type': 'online', // Online access for implicit flow
       }
     };
 
     this.oauthService.configure(authConfig);
 
-    // Set up automatic silent refresh using refresh tokens
-    this.oauthService.setupAutomaticSilentRefresh();
-
-    // Listen for token refresh events
+    // Listen for token events
     this.oauthService.events.subscribe(event => {
-      if (event.type === 'token_received' || event.type === 'token_refreshed') {
-        console.log('Token refreshed successfully');
+      if (event.type === 'token_received') {
+        console.log('Token received successfully');
         this.isAuthenticatedSubject.next(true);
-      } else if (event.type === 'token_refresh_error') {
-        console.error('Token refresh failed:', event);
-        this.handleTokenRefreshError();
-      } else if (event.type === 'silent_refresh_error') {
-        console.error('Silent refresh error:', event);
-        this.handleTokenRefreshError();
       } else if (event.type === 'token_error') {
         console.error('Token error:', event);
-        // Don't immediately redirect on token_error during refresh attempts
-        // The refresh logic will handle retries
+        // Token is invalid, user needs to re-authenticate
+        if (this.router.url !== '/signin') {
+          this.handleTokenRefreshError();
+        }
+      } else if (event.type === 'session_terminated' || event.type === 'session_error') {
+        console.error('Session error:', event);
+        this.handleTokenRefreshError();
       }
     });
   }
@@ -142,30 +137,37 @@ export class AuthService {
   }
 
   /**
-   * Manually trigger a token refresh
+   * Manually trigger a token refresh using silent refresh (iframe with prompt=none)
+   * Note: This may fail if user's Google session has expired or requires interaction
    */
   public async refreshToken(): Promise<boolean> {
     try {
-      // Check if we have a refresh token
-      const refreshToken = this.oauthService.getRefreshToken();
-      if (!refreshToken) {
-        console.warn('No refresh token available. User needs to re-authenticate to get a refresh token.');
-        // User logged in before we enabled offline_access
-        // They need to log out and log back in
-        return false;
-      }
+      console.log('Attempting silent token refresh...');
 
-      await this.oauthService.refreshToken();
+      // Try silent refresh with Google (uses iframe with prompt=none)
+      await this.oauthService.silentRefresh({
+        customQueryParams: {
+          'prompt': 'none' // Don't show UI, fail if interaction needed
+        }
+      });
+
       const hasValidToken = this.oauthService.hasValidAccessToken();
 
       if (hasValidToken) {
-        console.log('Token refreshed successfully using refresh token');
+        console.log('Token refreshed successfully via silent refresh');
         this.isAuthenticatedSubject.next(true);
       }
 
       return hasValidToken;
-    } catch (error) {
-      console.error('Manual token refresh failed:', error);
+    } catch (error: any) {
+      console.warn('Silent token refresh failed:', error);
+
+      // Silent refresh failed - this is expected if:
+      // - User's Google session expired
+      // - User needs to grant consent again
+      // - User is in incognito mode
+      // - Third-party cookies are blocked
+
       // Don't call handleTokenRefreshError here - let the caller decide
       // This prevents automatic redirects during proactive refresh attempts
       return false;
@@ -174,6 +176,7 @@ export class AuthService {
 
   /**
    * Check if we have a refresh token
+   * Note: Implicit flow doesn't provide refresh tokens
    */
   public hasRefreshToken(): boolean {
     return !!this.oauthService.getRefreshToken();
