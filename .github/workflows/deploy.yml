@@ -43,7 +43,7 @@ jobs:
         run: npm run build -- --base-href /cat-view/
 
       - name: Copy index.html to 404.html
-        run: cp dist/index.html dist/404.html
+        run: cp dist/cat-view/index.html dist/cat-view/404.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
