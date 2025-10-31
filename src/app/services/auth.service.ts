@@ -44,7 +44,8 @@ export class AuthService {
     // Remove trailing slash from baseHref if present, then add /signin
     const cleanBaseHref = baseHref.endsWith('/') ? baseHref.slice(0, -1) : baseHref;
 
-    return `${origin}${cleanBaseHref}/signin`;
+    return `${origin}/cat-view/signin`
+    //return `${origin}${cleanBaseHref}/signin`;
   }
 
   public login(): void {
