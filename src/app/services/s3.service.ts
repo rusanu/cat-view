@@ -8,11 +8,9 @@ import { CognitoAuthService } from './cognito-auth.service';
   providedIn: 'root'
 })
 export class S3Service {
-  private s3Client: S3Client | null = null;
   private bucketName: string;
   private bucketFolder: string;
   private urlCache: Map<string, { url: string, expires: number }> = new Map();
-  private useCognito: boolean;
 
   constructor(
     private cognitoAuthService: CognitoAuthService
@@ -20,18 +18,12 @@ export class S3Service {
     this.bucketName = environment.aws.bucketName;
     this.bucketFolder = environment.aws.bucketFolder;
 
-    // Use Cognito if Identity Pool ID is configured, otherwise fall back to static credentials
-    this.useCognito = !!environment.cognito.identityPoolId;
-
-    // Initialize S3 client with static credentials if not using Cognito
-    if (!this.useCognito) {
-      this.s3Client = new S3Client({
-        region: environment.aws.region,
-        credentials: {
-          accessKeyId: environment.aws.accessKeyId,
-          secretAccessKey: environment.aws.secretAccessKey,
-        }
-      });
+    // Validate that Cognito is configured
+    if (!environment.cognito.identityPoolId) {
+      throw new Error(
+        'Cognito Identity Pool ID is required. Please configure COGNITO_IDENTITY_POOL_ID in your .env file. ' +
+        'Static AWS credentials are no longer supported for security reasons.'
+      );
     }
   }
 
@@ -40,20 +32,13 @@ export class S3Service {
    */
   clearCaches(): void {
     this.urlCache.clear();
-    if (this.useCognito) {
-      this.cognitoAuthService.clearCredentials();
-    }
+    this.cognitoAuthService.clearCredentials();
   }
 
   /**
-   * Gets or creates the S3 client with appropriate credentials
+   * Gets or creates the S3 client with Cognito credentials
    */
   private async getS3Client(): Promise<S3Client> {
-    if (!this.useCognito) {
-      // Return the static client
-      return this.s3Client!;
-    }
-
     // Use Cognito credentials - always create a new client to ensure fresh credentials
     const credentials = await this.cognitoAuthService.getAwsCredentials();
 
