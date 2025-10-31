@@ -23,13 +23,28 @@ export class AuthService {
       issuer: 'https://accounts.google.com',
       strictDiscoveryDocumentValidation: false,
       clientId: environment.google.clientId,
-      redirectUri: window.location.origin + '/signin',
+      redirectUri: this.getRedirectUri(),
       scope: 'openid profile email',
       showDebugInformation: !environment.production,
     };
 
     this.oauthService.configure(authConfig);
     this.oauthService.setupAutomaticSilentRefresh();
+  }
+
+  private getRedirectUri(): string {
+    // Read base href from DOM to handle both root (/) and subdirectory (/cat-view/) deployments
+    const baseElement = document.querySelector('base');
+    const baseHref = baseElement?.getAttribute('href') || '/';
+
+    // Construct full redirect URI
+    // baseHref is already absolute or starts with /, so we just need origin + baseHref + route
+    const origin = window.location.origin;
+
+    // Remove trailing slash from baseHref if present, then add /signin
+    const cleanBaseHref = baseHref.endsWith('/') ? baseHref.slice(0, -1) : baseHref;
+
+    return `${origin}${cleanBaseHref}/signin`;
   }
 
   public login(): void {
