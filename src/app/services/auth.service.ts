@@ -41,6 +41,8 @@ export class AuthService {
     // baseHref is already absolute or starts with /, so we just need origin + baseHref + route
     const origin = window.location.origin;
 
+    console.log('ret:', baseElement, baseHref, origin);
+
     // Remove trailing slash from baseHref if present, then add /signin
     const cleanBaseHref = baseHref.endsWith('/') ? baseHref.slice(0, -1) : baseHref;
 
