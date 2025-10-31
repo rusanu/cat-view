@@ -25,6 +25,13 @@ export class CognitoAuthService {
     // Check if the OAuth token is expired or about to expire
     if (this.authService.isTokenExpiringSoon()) {
       console.log('OAuth token is expiring soon, attempting refresh...');
+
+      // Check if we have a refresh token (users logged in before offline_access was enabled won't have one)
+      if (!this.authService.hasRefreshToken()) {
+        console.warn('No refresh token available. User needs to re-authenticate.');
+        throw new Error('Your session needs to be refreshed. Please sign in again to continue.');
+      }
+
       const refreshed = await this.authService.refreshToken();
       if (!refreshed) {
         throw new Error('Failed to refresh OAuth token. Please sign in again.');
@@ -65,6 +72,13 @@ export class CognitoAuthService {
         error.message.includes('expired')
       )) {
         console.log('Token error detected, attempting refresh...');
+
+        // Check if we have a refresh token before attempting refresh
+        if (!this.authService.hasRefreshToken()) {
+          console.warn('No refresh token available for retry. User needs to re-authenticate.');
+          throw new Error('Your session has expired and cannot be refreshed. Please sign in again.');
+        }
+
         const refreshed = await this.authService.refreshToken();
         if (refreshed) {
           // Retry with the new token

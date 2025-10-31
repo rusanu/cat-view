@@ -26,17 +26,22 @@ export class AuthService {
       redirectUri: this.getRedirectUri(),
       scope: 'openid profile email',
       showDebugInformation: !environment.production,
-      // Enable automatic silent refresh when token is about to expire
-      silentRefreshRedirectUri: this.getRedirectUri(),
-      // Use prompt=none for silent refresh
-      silentRefreshShowIFrame: false,
-      // Session checks to detect changes in auth state
-      sessionChecksEnabled: true,
+      // Request refresh token from Google
+      responseType: 'code',
+      // Use PKCE for security (required for public clients)
+      useSilentRefresh: true,
       // Timeout for silent refresh (ms)
       silentRefreshTimeout: 20000,
+      // Custom parameters for Google OAuth
+      customQueryParams: {
+        'access_type': 'offline', // Request refresh token
+        'prompt': 'consent' // Ensure refresh token is granted (may require on first login)
+      }
     };
 
     this.oauthService.configure(authConfig);
+
+    // Set up automatic silent refresh using refresh tokens
     this.oauthService.setupAutomaticSilentRefresh();
 
     // Listen for token refresh events
@@ -50,6 +55,10 @@ export class AuthService {
       } else if (event.type === 'silent_refresh_error') {
         console.error('Silent refresh error:', event);
         this.handleTokenRefreshError();
+      } else if (event.type === 'token_error') {
+        console.error('Token error:', event);
+        // Don't immediately redirect on token_error during refresh attempts
+        // The refresh logic will handle retries
       }
     });
   }
@@ -68,8 +77,8 @@ export class AuthService {
 
     // Remove trailing slash from baseHref if present, then add /signin
 
-    return `${origin}/cat-view/signin`
-    //return `${origin}${cleanBaseHref}/signin`;
+    //return `${origin}/cat-view/signin`
+    return `${origin}${cleanBaseHref}/signin`;
   }
 
   public login(): void {
@@ -137,12 +146,36 @@ export class AuthService {
    */
   public async refreshToken(): Promise<boolean> {
     try {
-      await this.oauthService.silentRefresh();
-      return this.oauthService.hasValidAccessToken();
+      // Check if we have a refresh token
+      const refreshToken = this.oauthService.getRefreshToken();
+      if (!refreshToken) {
+        console.warn('No refresh token available. User needs to re-authenticate to get a refresh token.');
+        // User logged in before we enabled offline_access
+        // They need to log out and log back in
+        return false;
+      }
+
+      await this.oauthService.refreshToken();
+      const hasValidToken = this.oauthService.hasValidAccessToken();
+
+      if (hasValidToken) {
+        console.log('Token refreshed successfully using refresh token');
+        this.isAuthenticatedSubject.next(true);
+      }
+
+      return hasValidToken;
     } catch (error) {
       console.error('Manual token refresh failed:', error);
-      this.handleTokenRefreshError();
+      // Don't call handleTokenRefreshError here - let the caller decide
+      // This prevents automatic redirects during proactive refresh attempts
       return false;
     }
+  }
+
+  /**
+   * Check if we have a refresh token
+   */
+  public hasRefreshToken(): boolean {
+    return !!this.oauthService.getRefreshToken();
   }
 }
