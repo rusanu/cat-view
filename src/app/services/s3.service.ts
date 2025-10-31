@@ -2,26 +2,64 @@ import { Injectable } from '@angular/core';
 import { S3Client, ListObjectsV2Command, GetObjectCommand, ListObjectsV2CommandOutput } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { environment } from '../../environments/environment.development';
+import { CognitoAuthService } from './cognito-auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class S3Service {
-  private s3Client: S3Client;
+  private s3Client: S3Client | null = null;
   private bucketName: string;
   private bucketFolder: string;
   private urlCache: Map<string, { url: string, expires: number }> = new Map();
+  private useCognito: boolean;
 
-  constructor() {
+  constructor(
+    private cognitoAuthService: CognitoAuthService
+  ) {
     this.bucketName = environment.aws.bucketName;
     this.bucketFolder = environment.aws.bucketFolder;
 
-    this.s3Client = new S3Client({
+    // Use Cognito if Identity Pool ID is configured, otherwise fall back to static credentials
+    this.useCognito = !!environment.cognito.identityPoolId;
+
+    // Initialize S3 client with static credentials if not using Cognito
+    if (!this.useCognito) {
+      this.s3Client = new S3Client({
+        region: environment.aws.region,
+        credentials: {
+          accessKeyId: environment.aws.accessKeyId,
+          secretAccessKey: environment.aws.secretAccessKey,
+        }
+      });
+    }
+  }
+
+  /**
+   * Clears all caches (useful when logging out)
+   */
+  clearCaches(): void {
+    this.urlCache.clear();
+    if (this.useCognito) {
+      this.cognitoAuthService.clearCredentials();
+    }
+  }
+
+  /**
+   * Gets or creates the S3 client with appropriate credentials
+   */
+  private async getS3Client(): Promise<S3Client> {
+    if (!this.useCognito) {
+      // Return the static client
+      return this.s3Client!;
+    }
+
+    // Use Cognito credentials - always create a new client to ensure fresh credentials
+    const credentials = await this.cognitoAuthService.getAwsCredentials();
+
+    return new S3Client({
       region: environment.aws.region,
-      credentials: {
-        accessKeyId: environment.aws.accessKeyId,
-        secretAccessKey: environment.aws.secretAccessKey,
-      }
+      credentials: credentials
     });
   }
 
@@ -38,7 +76,8 @@ export class S3Service {
       MaxKeys: maxKeys
     });
 
-    return await this.s3Client.send(command);
+    const client = await this.getS3Client();
+    return await client.send(command);
   }
 
   /**
@@ -60,7 +99,8 @@ export class S3Service {
       Key: key
     });
 
-    const url = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
+    const client = await this.getS3Client();
+    const url = await getSignedUrl(client, command, { expiresIn: 3600 });
 
     // Cache the URL
     this.urlCache.set(key, {
@@ -81,7 +121,8 @@ export class S3Service {
       Key: key
     });
 
-    const response = await this.s3Client.send(command);
+    const client = await this.getS3Client();
+    const response = await client.send(command);
     return response;
   }
 }

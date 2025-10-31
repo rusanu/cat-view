@@ -18,6 +18,9 @@ export const environment = {
   },
   google: {
     clientId: '${envConfig.GOOGLE_CLIENT_ID || ''}',
+  },
+  cognito: {
+    identityPoolId: '${envConfig.COGNITO_IDENTITY_POOL_ID || ''}',
   }
 };
 `;

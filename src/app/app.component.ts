@@ -3,6 +3,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './services/auth.service';
 import { GravatarService } from './services/gravatar.service';
+import { S3Service } from './services/s3.service';
 
 @Component({
   selector: 'app-root',
@@ -18,7 +19,8 @@ export class AppComponent implements OnInit {
 
   constructor(
     public authService: AuthService,
-    public gravatarService: GravatarService
+    public gravatarService: GravatarService,
+    private s3Service: S3Service
   ) {}
 
   ngOnInit(): void {
@@ -37,6 +39,8 @@ export class AppComponent implements OnInit {
   }
 
   logout(): void {
+    // Clear S3 and Cognito caches before logging out
+    this.s3Service.clearCaches();
     this.authService.logout();
   }
 

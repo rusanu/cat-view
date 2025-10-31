@@ -12,5 +12,8 @@ export const environment = {
   },
   google: {
     clientId: 'your-google-client-id',
+  },
+  cognito: {
+    identityPoolId: 'your-identity-pool-id',
   }
 };
