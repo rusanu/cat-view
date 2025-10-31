@@ -17,6 +17,21 @@
           <a class="nav-link" routerLink="/graphs" routerLinkActive="active">Graphs</a>
         </li>
       </ul>
+      <ul class="navbar-nav ms-auto" *ngIf="isAuthenticated">
+        <li class="nav-item d-flex align-items-center">
+          <img [src]="getAvatarUrl()"
+               alt="User avatar"
+               class="rounded-circle me-2"
+               width="32"
+               height="32">
+          <span class="navbar-text me-3">
+            {{ userProfile?.name || userProfile?.email || 'User' }}
+          </span>
+        </li>
+        <li class="nav-item">
+          <button class="btn btn-outline-light btn-sm" (click)="logout()">Sign Out</button>
+        </li>
+      </ul>
     </div>
   </div>
 </nav>

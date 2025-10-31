@@ -9,5 +9,8 @@ export const environment = {
     bucketFolder: 'your-folder-name',
     accessKeyId: 'your-access-key-id',
     secretAccessKey: 'your-secret-access-key',
+  },
+  google: {
+    clientId: 'your-google-client-id',
   }
 };

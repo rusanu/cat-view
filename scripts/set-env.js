@@ -15,6 +15,9 @@ export const environment = {
     bucketFolder: '${envConfig.AWS_BUCKET_FOLDER || ''}',
     accessKeyId: '${envConfig.AWS_ACCESS_KEY_ID || ''}',
     secretAccessKey: '${envConfig.AWS_SECRET_ACCESS_KEY || ''}',
+  },
+  google: {
+    clientId: '${envConfig.GOOGLE_CLIENT_ID || ''}',
   }
 };
 `;
