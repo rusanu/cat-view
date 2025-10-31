@@ -22,6 +22,15 @@ export class CognitoAuthService {
       return this.cachedCredentials;
     }
 
+    // Check if the OAuth token is expired or about to expire
+    if (this.authService.isTokenExpiringSoon()) {
+      console.log('OAuth token is expiring soon, attempting refresh...');
+      const refreshed = await this.authService.refreshToken();
+      if (!refreshed) {
+        throw new Error('Failed to refresh OAuth token. Please sign in again.');
+      }
+    }
+
     // Get the Google ID token from the auth service
     const idToken = this.authService.getIdToken();
 
@@ -48,6 +57,32 @@ export class CognitoAuthService {
       return this.cachedCredentials;
     } catch (error) {
       console.error('Error getting AWS credentials from Cognito:', error);
+
+      // If the error is related to token validation, try refreshing the token once
+      if (error instanceof Error && (
+        error.message.includes('Token') ||
+        error.message.includes('Invalid') ||
+        error.message.includes('expired')
+      )) {
+        console.log('Token error detected, attempting refresh...');
+        const refreshed = await this.authService.refreshToken();
+        if (refreshed) {
+          // Retry with the new token
+          const newIdToken = this.authService.getIdToken();
+          if (newIdToken) {
+            const retryProvider = fromCognitoIdentityPool({
+              clientConfig: { region: environment.aws.region },
+              identityPoolId: environment.cognito.identityPoolId,
+              logins: {
+                'accounts.google.com': newIdToken
+              }
+            });
+            this.cachedCredentials = await retryProvider();
+            return this.cachedCredentials;
+          }
+        }
+      }
+
       throw new Error('Failed to get AWS credentials from Cognito Identity Pool');
     }
   }

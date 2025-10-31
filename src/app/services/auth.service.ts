@@ -26,10 +26,32 @@ export class AuthService {
       redirectUri: this.getRedirectUri(),
       scope: 'openid profile email',
       showDebugInformation: !environment.production,
+      // Enable automatic silent refresh when token is about to expire
+      silentRefreshRedirectUri: this.getRedirectUri(),
+      // Use prompt=none for silent refresh
+      silentRefreshShowIFrame: false,
+      // Session checks to detect changes in auth state
+      sessionChecksEnabled: true,
+      // Timeout for silent refresh (ms)
+      silentRefreshTimeout: 20000,
     };
 
     this.oauthService.configure(authConfig);
     this.oauthService.setupAutomaticSilentRefresh();
+
+    // Listen for token refresh events
+    this.oauthService.events.subscribe(event => {
+      if (event.type === 'token_received' || event.type === 'token_refreshed') {
+        console.log('Token refreshed successfully');
+        this.isAuthenticatedSubject.next(true);
+      } else if (event.type === 'token_refresh_error') {
+        console.error('Token refresh failed:', event);
+        this.handleTokenRefreshError();
+      } else if (event.type === 'silent_refresh_error') {
+        console.error('Silent refresh error:', event);
+        this.handleTokenRefreshError();
+      }
+    });
   }
 
   private getRedirectUri(): string {
@@ -41,10 +63,10 @@ export class AuthService {
     // baseHref is already absolute or starts with /, so we just need origin + baseHref + route
     const origin = window.location.origin;
 
-    console.log('ret:', baseElement, baseHref, origin);
+    const cleanBaseHref = baseHref.endsWith('/') ? baseHref.slice(0, -1) : baseHref;
+    console.log('ret:', baseElement, baseHref, cleanBaseHref, origin);
 
     // Remove trailing slash from baseHref if present, then add /signin
-    const cleanBaseHref = baseHref.endsWith('/') ? baseHref.slice(0, -1) : baseHref;
 
     return `${origin}/cat-view/signin`
     //return `${origin}${cleanBaseHref}/signin`;
@@ -84,5 +106,43 @@ export class AuthService {
       this.isAuthenticatedSubject.next(true);
     }
     return isAuthenticated;
+  }
+
+  private handleTokenRefreshError(): void {
+    // Token refresh failed, user needs to re-authenticate
+    console.warn('Token refresh failed. Redirecting to login...');
+    this.isAuthenticatedSubject.next(false);
+    // Clear the failed tokens
+    this.oauthService.logOut(true); // noRedirectToLogoutUrl = true
+    // Redirect to signin page
+    this.router.navigate(['/signin']);
+  }
+
+  /**
+   * Check if the current token is expired or about to expire
+   * @param bufferSeconds Number of seconds before expiration to consider token as expired (default: 300 = 5 minutes)
+   */
+  public isTokenExpiringSoon(bufferSeconds: number = 300): boolean {
+    const expiresAt = this.oauthService.getAccessTokenExpiration();
+    if (!expiresAt) {
+      return true; // No expiration means no valid token
+    }
+    const now = Date.now();
+    const bufferMs = bufferSeconds * 1000;
+    return expiresAt < (now + bufferMs);
+  }
+
+  /**
+   * Manually trigger a token refresh
+   */
+  public async refreshToken(): Promise<boolean> {
+    try {
+      await this.oauthService.silentRefresh();
+      return this.oauthService.hasValidAccessToken();
+    } catch (error) {
+      console.error('Manual token refresh failed:', error);
+      this.handleTokenRefreshError();
+      return false;
+    }
   }
 }
