@@ -42,7 +42,7 @@ export class PhotosComponent implements OnInit, OnDestroy {
   private readonly MAX_PHOTO_HEIGHT = 80;
   private readonly PHOTO_HEIGHT_KEY = 'photo-section-height';
 
-  constructor(private photoService: PhotoService, private configService:ActionConfigService) {
+  constructor(private photoService: PhotoService, public config:ActionConfigService) {
     // Load saved panel width from localStorage
     const savedWidth = localStorage.getItem(this.PANEL_WIDTH_KEY);
     if (savedWidth) {

@@ -3,11 +3,12 @@ import { UserProfileService } from '../../services/user-profile.service';
 import { AsyncPipe, NgIf } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { ActionConfigService } from '../../services/action-config.service';
+import { ToggleButtonComponent } from '../toggle-button/toggle-button.component';
 
 @Component({
   selector: 'app-action-bar',
   standalone: true,
-  imports: [AsyncPipe, NgIf],
+  imports: [AsyncPipe, NgIf, ToggleButtonComponent],
   templateUrl: './action-bar.component.html',
   styleUrl: './action-bar.component.css'
 })
@@ -19,7 +20,7 @@ export class ActionBarComponent {
 
   constructor(
     public userProfile:UserProfileService,
-    private config: ActionConfigService,
+    public config: ActionConfigService,
     private authService: AuthService) {
   }
 

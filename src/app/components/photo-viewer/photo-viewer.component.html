@@ -6,7 +6,15 @@
 
   <!-- Photo Display -->
   <div *ngIf="photo" class="photo-display">
-    <!-- Toolbar -->
+    <!-- Image -->
+    <div class="image-container">
+      <img [src]="photo.url"
+           class="full-image"
+           [alt]="photo.fileName"
+           class="main-photo"
+           [style.transform]="getRotationStyle()">
+    </div>
+<!-- Toolbar -->
     <div class="viewer-toolbar">
       <div class="toolbar-info">
         <strong>{{ photo.fileName }}</strong>
@@ -52,15 +60,6 @@
     </div>
     <div class="metadata-bar" *ngIf="!metadata && !metadataLoading && photo">
       <span class="text-muted">No metadata available</span>
-    </div>
-
-    <!-- Image -->
-    <div class="image-container">
-      <img [src]="photo.url"
-           class="full-image"
-           [alt]="photo.fileName"
-           class="main-photo"
-           [style.transform]="getRotationStyle()">
     </div>
   </div>
 </div>

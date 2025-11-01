@@ -10,6 +10,7 @@ export class ActionConfigService {
 
   public autoRefresh$ = new BehaviorSubject<boolean>(true);
   public rotation$ = new BehaviorSubject<number>(INITIAL_ROTATION);
+  public showGrid$ = new BehaviorSubject<boolean>(true);
 
   constructor() {
 

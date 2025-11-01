@@ -18,6 +18,9 @@
         <button class="btn btn-sm btn-secondary" (click)="rotateClockwise()" title="Rotate right 90°">
           <span>↷ +90°</span>
         </button>
+
+        <button app-toggle [data$]="config.autoRefresh$" title="Auto Refresh" class="btn btn-sm btn-secondary"></button>
+        <button app-toggle [data$]="config.showGrid$" title="Show Grid" class="btn btn-sm btn-secondary"></button>
       </div>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto" *ngIf="(isAuthenticated$ | async)">

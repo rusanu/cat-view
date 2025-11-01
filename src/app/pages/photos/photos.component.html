@@ -25,36 +25,7 @@
   <!-- Split Panel Layout -->
   <div *ngIf="!loading && !error && photos.length > 0" class="split-panel">
     <!-- Left Panel: Photo List (Thumbnails) -->
-    <div class="photo-list-panel" [style.width.px]="leftPanelWidth">
-      <div class="panel-header">
-        <div class="header-content">
-          <h5>Photos ({{ photos.length }})</h5>
-          <app-date-range-selector
-            (dateRangeChanged)="onDateRangeChanged($event)">
-          </app-date-range-selector>
-        </div>
-        <div class="header-actions">
-          <button class="btn btn-sm btn-outline-secondary"
-                  (click)="refreshPhotos()"
-                  [disabled]="refreshing"
-                  title="Refresh photos">
-            <span *ngIf="!refreshing">🔄</span>
-            <span *ngIf="refreshing" class="spinner-border spinner-border-sm"></span>
-          </button>
-          <button class="btn btn-sm"
-                  [class.btn-success]="autoRefresh"
-                  [class.btn-outline-secondary]="!autoRefresh"
-                  (click)="toggleAutoRefresh()"
-                  title="Toggle auto-refresh (every 1 minute)">
-            <span *ngIf="!autoRefresh">⏸️ Auto</span>
-            <span *ngIf="autoRefresh">▶️ Auto</span>
-          </button>
-          <button class="btn btn-sm btn-outline-primary" (click)="toggleGraphs()">
-            <span *ngIf="!showGraphs">📊 Show Graphs</span>
-            <span *ngIf="showGraphs">📊 Hide Graphs</span>
-          </button>
-        </div>
-      </div>
+    <div *ngIf="(config.showGrid$ | async)" class="photo-list-panel" [style.width.px]="leftPanelWidth">
       <app-photo-list class="photo-list-container"
         [photos]="photos"
         [selectedPhoto]="selectedPhoto"
