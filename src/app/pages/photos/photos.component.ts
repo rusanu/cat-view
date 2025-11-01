@@ -7,6 +7,7 @@ import { PhotoGraphsComponent } from '../../components/photo-graphs/photo-graphs
 import { DateRangeSelectorComponent, DateRange } from '../../components/date-range-selector/date-range-selector.component';
 import { ActionBarComponent } from '../../components/action-bar/action-bar.component';
 import { ActionConfigService } from '../../services/action-config.service';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-photos',
@@ -42,6 +43,8 @@ export class PhotosComponent implements OnInit, OnDestroy {
   private readonly MAX_PHOTO_HEIGHT = 80;
   private readonly PHOTO_HEIGHT_KEY = 'photo-section-height';
 
+  private destroy$ = new Subject<void>();
+
   constructor(private photoService: PhotoService, public config:ActionConfigService) {
     // Load saved panel width from localStorage
     const savedWidth = localStorage.getItem(this.PANEL_WIDTH_KEY);
@@ -63,6 +66,10 @@ export class PhotosComponent implements OnInit, OnDestroy {
     document.addEventListener('mouseup', this.onMouseUp);
     document.addEventListener('mousemove', this.onVerticalMouseMove);
     document.addEventListener('mouseup', this.onVerticalMouseUp);
+
+    this.config.autoRefresh$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(this.setAutoRefresh.bind(this));
   }
 
   ngOnDestroy() {
@@ -76,6 +83,9 @@ export class PhotosComponent implements OnInit, OnDestroy {
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
     }
+
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   async loadPhotos() {
@@ -148,8 +158,8 @@ export class PhotosComponent implements OnInit, OnDestroy {
     }
   }
 
-  toggleAutoRefresh() {
-    this.autoRefresh = !this.autoRefresh;
+  setAutoRefresh(autoRefresh:boolean) {
+    this.autoRefresh = autoRefresh;
 
     if (this.autoRefresh) {
       // Start polling
@@ -161,6 +171,24 @@ export class PhotosComponent implements OnInit, OnDestroy {
       if (this.refreshInterval) {
         clearInterval(this.refreshInterval);
         this.refreshInterval = null;
+      }
+    }
+  }
+
+  previousPhoto() {
+    if (this.photos && this.photos.length) {
+      const index = this.photos.findIndex(p => p.key === this.selectedPhoto?.key);
+      if (index > 0) {
+        this.selectedPhoto = this.photos[index-1];
+      }
+    }
+  }
+
+  nextPhoto() {
+    if (this.photos && this.photos.length) {
+      const index = this.photos.findIndex(p => p.key === this.selectedPhoto?.key);
+      if (index >= 0 && index < this.photos.length) {
+        this.selectedPhoto = this.photos[index+1];
       }
     }
   }

@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Photo } from '../../services/photo.service';
 import { MetadataService, PhotoMetadata } from '../../services/metadata.service';
@@ -14,6 +14,8 @@ import { Subject, takeUntil } from 'rxjs';
 })
 export class PhotoViewerComponent implements OnChanges, OnDestroy {
   @Input() photo: Photo | null = null;
+  @Output() prevPhoto = new EventEmitter<void>();
+  @Output() nextPhoto = new EventEmitter<void>();
   rotation: number = 0; // Rotation in degrees (0, 90, 180, 270, -90, -180, -270)
   metadata: PhotoMetadata | null = null;
   metadataLoading = false;
@@ -29,6 +31,14 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  emitNextPhoto() {
+    this.nextPhoto.emit();
+  }
+
+  emitPrevPhoto() {
+    this.prevPhoto.emit();
   }
 
   async ngOnChanges(changes: SimpleChanges) {

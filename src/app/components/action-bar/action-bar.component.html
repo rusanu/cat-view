@@ -8,12 +8,13 @@
       <span class="navbar-toggler-icon"></span>
     </button>
 
+    <div class="collapse navbar-collapse" id="navbarNav">
       <div class="toolbar-controls">
         <button class="btn btn-sm btn-secondary" (click)="rotateCounterClockwise()" title="Rotate left 90°">
           <span>↶ -90°</span>
         </button>
         <button class="btn btn-sm btn-secondary" (click)="resetRotation()" title="Reset rotation">
-          <span>⟲ Reset</span>
+          <span>0° Reset</span>
         </button>
         <button class="btn btn-sm btn-secondary" (click)="rotateClockwise()" title="Rotate right 90°">
           <span>↷ +90°</span>
@@ -25,9 +26,8 @@
         <button class="btn btn-sm btn-secondary">
           <app-toggle-button [data$]="config.showGrid$" title="Show Grid"></app-toggle-button>
         </button>
-        <
+        <button *ngIf="(this.config.showGrid$ | async)" class="btn btn-sm btn-secondary" (click)="emitRefresh()"><span>⟲ Refresh</span></button>
       </div>
-    <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto" *ngIf="(isAuthenticated$ | async)">
         <li class="nav-item d-flex align-items-center">
           <img [src]="(userProfile.avatarUrl$ | async)"

@@ -6,8 +6,11 @@
 
   <!-- Photo Display -->
   <div *ngIf="photo" class="photo-display">
+
     <!-- Image -->
     <div class="image-container">
+      <button class="photo-nav left" (click)="emitPrevPhoto()"><</button>
+      <button class="photo-nav right" (click)="emitNextPhoto()">></button>
       <img [src]="photo.url"
            class="full-image"
            [alt]="photo.fileName"

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { UserProfileService } from '../../services/user-profile.service';
 import { AsyncPipe, NgIf } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
@@ -13,6 +13,7 @@ import { ToggleButtonComponent } from '../toggle-button/toggle-button.component'
   styleUrl: './action-bar.component.css'
 })
 export class ActionBarComponent {
+  @Output() refresh = new EventEmitter<void>();
 
   public get isAuthenticated$() {
     return this.authService.isAuthenticated$;
@@ -26,6 +27,10 @@ export class ActionBarComponent {
 
   public logout() {
     this.authService.logout();
+  }
+
+  emitRefresh() {
+    this.refresh.emit();
   }
 
   rotateClockwise() {

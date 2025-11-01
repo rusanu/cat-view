@@ -1,4 +1,4 @@
-<app-action-bar></app-action-bar>
+<app-action-bar (refresh)="refreshPhotos()"></app-action-bar>
 
 <div class="photos-container">
   <!-- Loading State -->
@@ -46,7 +46,9 @@
         <div class="photo-section" [class.split]="showGraphs"
              [style.height.%]="showGraphs ? photoSectionHeight : 100">
           <app-photo-viewer
-            [photo]="selectedPhoto">
+            [photo]="selectedPhoto"
+            (nextPhoto)="nextPhoto()"
+            (prevPhoto)="previousPhoto()">
           </app-photo-viewer>
         </div>
 

@@ -79,6 +79,7 @@
 }
 
 .image-container {
+  position: relative;
   flex: 1;
   display: flex;
   align-items: center;
@@ -86,6 +87,24 @@
   overflow: auto;
   padding: 1rem;
 }
+
+
+.image-container .photo-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.1);
+  color: white;
+  border: none;
+  font-size: 2rem;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+
+}
+
+.image-container button.left { left: 20px; }
+.image-container button.right { right: 20px; }
 
 .main-photo {
   max-width: 100%;
