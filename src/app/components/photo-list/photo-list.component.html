@@ -9,7 +9,8 @@
            class="thumbnail"
            loading="lazy"
            (load)="onImageLoad($event)"
-           (error)="onImageError($event)">
+           (error)="onImageError($event)"
+           [style.transform]="getRotationStyle()">
       <div class="photo-time-overlay">
         {{ formatTime(photo.timestamp) }}
       </div>

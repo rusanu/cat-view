@@ -107,3 +107,13 @@
     justify-content: center;
   }
 }
+
+imng.full-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background-color: #e9ecef;
+  opacity: 0;
+  transition: opacity 0.3s ease-in;
+}

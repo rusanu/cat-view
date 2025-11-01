@@ -12,17 +12,6 @@
         <strong>{{ photo.fileName }}</strong>
         <span class="text-muted ms-3">{{ formatDateTime(photo.timestamp) }}</span>
       </div>
-      <div class="toolbar-controls">
-        <button class="btn btn-sm btn-secondary" (click)="rotateCounterClockwise()" title="Rotate left 90°">
-          <span>↶ -90°</span>
-        </button>
-        <button class="btn btn-sm btn-secondary" (click)="resetRotation()" title="Reset rotation">
-          <span>⟲ Reset</span>
-        </button>
-        <button class="btn btn-sm btn-secondary" (click)="rotateClockwise()" title="Rotate right 90°">
-          <span>↷ +90°</span>
-        </button>
-      </div>
     </div>
 
     <!-- Metadata -->
@@ -68,6 +57,7 @@
     <!-- Image -->
     <div class="image-container">
       <img [src]="photo.url"
+           class="full-image"
            [alt]="photo.fileName"
            class="main-photo"
            [style.transform]="getRotationStyle()">

@@ -1,6 +1,8 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Photo } from '../../services/photo.service';
+import { ActionConfigService } from '../../services/action-config.service';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-photo-list',
@@ -13,6 +15,21 @@ export class PhotoListComponent {
   @Input() photos: Photo[] = [];
   @Input() selectedPhoto: Photo | null = null;
   @Output() photoSelected = new EventEmitter<Photo>();
+
+  private destroy$ = new Subject<void>();
+  private rotation: number = 0;
+
+  constructor(private config:ActionConfigService) {
+    config.rotation$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(rotation => {
+      this.rotation = rotation
+    });
+  }
+
+  getRotationStyle(): string {
+    return `rotate(${this.rotation}deg)`;
+  }
 
   onPhotoClick(photo: Photo) {
     this.photoSelected.emit(photo);

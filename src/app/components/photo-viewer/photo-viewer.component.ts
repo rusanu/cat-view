@@ -1,7 +1,9 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Photo } from '../../services/photo.service';
 import { MetadataService, PhotoMetadata } from '../../services/metadata.service';
+import { ActionConfigService } from '../../services/action-config.service';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-photo-viewer',
@@ -10,13 +12,24 @@ import { MetadataService, PhotoMetadata } from '../../services/metadata.service'
   templateUrl: './photo-viewer.component.html',
   styleUrl: './photo-viewer.component.css'
 })
-export class PhotoViewerComponent implements OnChanges {
+export class PhotoViewerComponent implements OnChanges, OnDestroy {
   @Input() photo: Photo | null = null;
   rotation: number = 0; // Rotation in degrees (0, 90, 180, 270, -90, -180, -270)
   metadata: PhotoMetadata | null = null;
   metadataLoading = false;
 
-  constructor(private metadataService: MetadataService) {}
+  private destroy$ = new Subject<void>();
+
+  constructor(private metadataService: MetadataService, private config:ActionConfigService) {
+    config.rotation$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(rotation => this.rotation = rotation);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   async ngOnChanges(changes: SimpleChanges) {
     if (changes['photo'] && this.photo) {
@@ -39,18 +52,6 @@ export class PhotoViewerComponent implements OnChanges {
     } finally {
       this.metadataLoading = false;
     }
-  }
-
-  rotateClockwise() {
-    this.rotation = (this.rotation + 90) % 360;
-  }
-
-  rotateCounterClockwise() {
-    this.rotation = (this.rotation - 90 + 360) % 360;
-  }
-
-  resetRotation() {
-    this.rotation = 0;
   }
 
   getRotationStyle(): string {

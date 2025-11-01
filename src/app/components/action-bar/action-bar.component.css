@@ -1,0 +1,23 @@
+
+.viewer-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #1a1a1a;
+  color: white;
+  border-bottom: 1px solid #444;
+}
+
+.toolbar-info {
+  flex: 1;
+}
+
+.toolbar-info .text-muted {
+  color: #aaa !important;
+}
+
+.toolbar-controls {
+  display: flex;
+  gap: 0.5rem;
+}

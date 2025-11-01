@@ -7,6 +7,18 @@
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
+
+      <div class="toolbar-controls">
+        <button class="btn btn-sm btn-secondary" (click)="rotateCounterClockwise()" title="Rotate left 90°">
+          <span>↶ -90°</span>
+        </button>
+        <button class="btn btn-sm btn-secondary" (click)="resetRotation()" title="Reset rotation">
+          <span>⟲ Reset</span>
+        </button>
+        <button class="btn btn-sm btn-secondary" (click)="rotateClockwise()" title="Rotate right 90°">
+          <span>↷ +90°</span>
+        </button>
+      </div>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto" *ngIf="(isAuthenticated$ | async)">
         <li class="nav-item d-flex align-items-center">

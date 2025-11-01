@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { UserProfileService } from '../../services/user-profile.service';
 import { AsyncPipe, NgIf } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
+import { ActionConfigService } from '../../services/action-config.service';
 
 @Component({
   selector: 'app-action-bar',
@@ -16,11 +17,25 @@ export class ActionBarComponent {
     return this.authService.isAuthenticated$;
   }
 
-  constructor(public userProfile:UserProfileService, private authService: AuthService) {
-
+  constructor(
+    public userProfile:UserProfileService,
+    private config: ActionConfigService,
+    private authService: AuthService) {
   }
 
   public logout() {
     this.authService.logout();
+  }
+
+  rotateClockwise() {
+    this.config.rotateClockwise();
+  }
+
+  rotateCounterClockwise() {
+    this.config.rotateCounterClockwise();
+  }
+
+  resetRotation() {
+    this.config.resetRotation();
   }
 }
