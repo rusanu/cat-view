@@ -5,11 +5,13 @@ import { PhotoListComponent } from '../../components/photo-list/photo-list.compo
 import { PhotoViewerComponent } from '../../components/photo-viewer/photo-viewer.component';
 import { PhotoGraphsComponent } from '../../components/photo-graphs/photo-graphs.component';
 import { DateRangeSelectorComponent, DateRange } from '../../components/date-range-selector/date-range-selector.component';
+import { ActionBarComponent } from '../../components/action-bar/action-bar.component';
+import { ActionConfigService } from '../../services/action-config.service';
 
 @Component({
   selector: 'app-photos',
   standalone: true,
-  imports: [CommonModule, PhotoListComponent, PhotoViewerComponent, PhotoGraphsComponent, DateRangeSelectorComponent],
+  imports: [CommonModule, PhotoListComponent, PhotoViewerComponent, PhotoGraphsComponent, DateRangeSelectorComponent, ActionBarComponent],
   templateUrl: './photos.component.html',
   styleUrl: './photos.component.css'
 })
@@ -40,7 +42,7 @@ export class PhotosComponent implements OnInit, OnDestroy {
   private readonly MAX_PHOTO_HEIGHT = 80;
   private readonly PHOTO_HEIGHT_KEY = 'photo-section-height';
 
-  constructor(private photoService: PhotoService) {
+  constructor(private photoService: PhotoService, private configService:ActionConfigService) {
     // Load saved panel width from localStorage
     const savedWidth = localStorage.getItem(this.PANEL_WIDTH_KEY);
     if (savedWidth) {

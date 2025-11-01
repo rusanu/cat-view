@@ -39,6 +39,7 @@ export class AuthService {
     };
 
     this.oauthService.configure(authConfig);
+    this.isAuthenticatedSubject.next(this.oauthService.hasValidAccessToken());
 
     // Listen for token events
     this.oauthService.events.subscribe(event => {

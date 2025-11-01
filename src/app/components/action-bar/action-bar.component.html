@@ -1,0 +1,28 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">
+      <i class="bi bi-camera"></i> Cat View
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto" *ngIf="(isAuthenticated$ | async)">
+        <li class="nav-item d-flex align-items-center">
+          <img [src]="(userProfile.avatarUrl$ | async)"
+               alt="User avatar"
+               class="rounded-circle me-2"
+               width="32"
+               height="32">
+          <span class="navbar-text me-3">
+            {{ (userProfile.displayName$ | async) || 'User' }}
+          </span>
+        </li>
+        <li class="nav-item">
+          <button class="btn btn-outline-light btn-sm" (click)="logout()">Sign Out</button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>

@@ -93,7 +93,7 @@ export class S3Service {
       expires: now + (3600 * 1000) // 1 hour from now
     });
 
-    console.log('Generated pre-signed URL for:', key);
+    //console.log('Generated pre-signed URL for:', key);
     return url;
   }
 
