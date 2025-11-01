@@ -17,8 +17,8 @@
            class="main-photo"
            [style.transform]="getRotationStyle()">
     </div>
-<!-- Toolbar -->
-    <div class="viewer-toolbar">
+
+    <div *ngIf="(config.showMetdata$ | async)" class="viewer-toolbar">
       <div class="toolbar-info">
         <strong>{{ photo.fileName }}</strong>
         <span class="text-muted ms-3">{{ formatDateTime(photo.timestamp) }}</span>
@@ -26,7 +26,7 @@
     </div>
 
     <!-- Metadata -->
-    <div class="metadata-bar" *ngIf="metadata">
+    <div *ngIf="(config.showMetdata$ | async) && metadata" class="metadata-bar">
       <div class="metadata-grid">
         <div class="metadata-item">
           <span class="metadata-label">Temperature:</span>

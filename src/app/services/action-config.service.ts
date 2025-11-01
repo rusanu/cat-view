@@ -9,6 +9,7 @@ interface IConfig {
   autoRefresh: boolean;
   showGrid: boolean;
   rotation: number;
+  showMetadata: boolean;
 }
 
 @Injectable({
@@ -19,11 +20,13 @@ export class ActionConfigService {
   public autoRefresh$ = new BehaviorSubject<boolean>(true);
   public rotation$ = new BehaviorSubject<number>(INITIAL_ROTATION);
   public showGrid$ = new BehaviorSubject<boolean>(true);
+  public showMetdata$ = new BehaviorSubject<boolean>(false);
 
   private config: IConfig = {
     autoRefresh: true,
     rotation: INITIAL_ROTATION,
-    showGrid: true
+    showGrid: true,
+    showMetadata: false
   };
 
   constructor() {
@@ -41,6 +44,7 @@ export class ActionConfigService {
         this.autoRefresh$.next(this.config.autoRefresh);
         this.rotation$.next(this.config.rotation);
         this.showGrid$.next(this.config.showGrid);
+        this.showMetdata$.next(this.config.showMetadata);
         }
     }
     catch(err) {
@@ -56,12 +60,17 @@ export class ActionConfigService {
     this.showGrid$.subscribe(value => {
       this.config.showGrid = value;
       this.saveConfig();
-    })
+    });
 
     this.rotation$.subscribe(value => {
       this.config.rotation = value;
       this.saveConfig();
-    })
+    });
+
+    this.showMetdata$.subscribe(value => {
+      this.config.showMetadata = value;
+      this.saveConfig();
+    });
   }
 
   private saveConfig() {

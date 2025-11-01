@@ -20,6 +20,10 @@
           <span>↷ +90°</span>
         </button>
 
+
+         <button class="btn btn-sm btn-secondary">
+          <app-toggle-button [data$]="config.showMetdata$" title="Photo Details"></app-toggle-button>
+        </button>
          <button class="btn btn-sm btn-secondary">
           <app-toggle-button [data$]="config.autoRefresh$" title="Auto Refresh"></app-toggle-button>
         </button>

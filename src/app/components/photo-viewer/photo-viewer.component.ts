@@ -22,7 +22,7 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private metadataService: MetadataService, private config:ActionConfigService) {
+  constructor(private metadataService: MetadataService, public config:ActionConfigService) {
     config.rotation$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(rotation => this.rotation = rotation);

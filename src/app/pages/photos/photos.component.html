@@ -46,6 +46,7 @@
         <div class="photo-section" [class.split]="showGraphs"
              [style.height.%]="showGraphs ? photoSectionHeight : 100">
           <app-photo-viewer
+            [style.height.%]="100"
             [photo]="selectedPhoto"
             (nextPhoto)="nextPhoto()"
             (prevPhoto)="previousPhoto()">
