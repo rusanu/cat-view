@@ -1,28 +1,16 @@
-import { NgIf } from '@angular/common';
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
-  selector: 'button[app-toggle]',
+  selector: 'app-toggle-button',
   standalone: true,
-  imports: [NgIf],
+  imports: [],
   templateUrl: './toggle-button.component.html',
   styleUrl: './toggle-button.component.css',
   host: {
-    // Set static attributes
-    'type': 'button',
-    'role': 'switch',
-
-    // Set static classes
-    'class': 'toggle-btn',
-
-    // Bind to component properties
-    '[class.active]': 'isOn',
-    '[attr.aria-pressed]': 'isOn',
-
-    // Listen to events on the host
-    '(click)': 'toggle()'
-}})
+    class: 'form-switch'
+  }
+})
 export class ToggleButtonComponent implements OnInit, OnDestroy {
   @Input() data$!: Subject<boolean>;
   @Input() title!: string;
@@ -30,6 +18,8 @@ export class ToggleButtonComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   public isOn: boolean = false;
+
+  public id: string = `id-${Math.random().toString(36).substr(2, 9)}`;
 
   ngOnDestroy(): void {
     this.destroy$.next();

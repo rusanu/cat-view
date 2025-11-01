@@ -19,8 +19,13 @@
           <span>↷ +90°</span>
         </button>
 
-        <button app-toggle [data$]="config.autoRefresh$" title="Auto Refresh" class="btn btn-sm btn-secondary"></button>
-        <button app-toggle [data$]="config.showGrid$" title="Show Grid" class="btn btn-sm btn-secondary"></button>
+         <button class="btn btn-sm btn-secondary">
+          <app-toggle-button [data$]="config.autoRefresh$" title="Auto Refresh"></app-toggle-button>
+        </button>
+        <button class="btn btn-sm btn-secondary">
+          <app-toggle-button [data$]="config.showGrid$" title="Show Grid"></app-toggle-button>
+        </button>
+        <
       </div>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto" *ngIf="(isAuthenticated$ | async)">
