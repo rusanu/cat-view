@@ -42,7 +42,7 @@
     "@types/jasmine": "~5.1.0",
     "@types/md5": "^2.3.6",
     "angular-eslint": "20.5.0",
-    "chokidar": "^4.0.3",
+    "chokidar": "^3.6.0",
     "dotenv": "^17.2.3",
     "eslint": "^9.38.0",
     "jasmine-core": "~5.1.0",
@@ -53,5 +53,8 @@
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.4.2",
     "typescript-eslint": "8.46.1"
+  },
+  "overrides": {
+    "chokidar": "^3.6.0"
   }
 }
