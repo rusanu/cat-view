@@ -25,9 +25,9 @@
       </div>
     </div>
 
-    <!-- Metadata -->
-    <div *ngIf="(config.showMetdata$ | async) && metadata" class="metadata-bar">
-      <div class="metadata-grid">
+    <!-- Metadata - Always render to prevent layout shift -->
+    <div *ngIf="(config.showMetdata$ | async)" class="metadata-bar">
+      <div *ngIf="metadata" class="metadata-grid">
         <div class="metadata-item">
           <span class="metadata-label">Temperature:</span>
           <span class="metadata-value">{{ metadata.temperature_celsius }}°C</span>
@@ -57,12 +57,8 @@
           <span class="metadata-value">{{ formatUptime(metadata.uptime_seconds) }}</span>
         </div>
       </div>
-    </div>
-    <div class="metadata-bar" *ngIf="metadataLoading">
-      <span class="text-muted">Loading metadata...</span>
-    </div>
-    <div class="metadata-bar" *ngIf="!metadata && !metadataLoading && photo">
-      <span class="text-muted">No metadata available</span>
+      <span *ngIf="metadataLoading" class="text-muted">Loading metadata...</span>
+      <span *ngIf="!metadata && !metadataLoading && photo" class="text-muted">No metadata available</span>
     </div>
   </div>
 </div>
