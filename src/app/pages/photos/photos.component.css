@@ -158,6 +158,10 @@
 
 /* Responsive layout */
 @media (max-width: 768px) {
+  .photos-container {
+    height: calc(100vh - 56px); /* Only account for navbar on mobile, maximize photo space */
+  }
+
   .split-panel {
     flex-direction: column;
   }

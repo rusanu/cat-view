@@ -120,11 +120,35 @@
     flex-direction: column;
     gap: 0.5rem;
     align-items: flex-start;
+    padding: 0.5rem;
   }
 
   .toolbar-controls {
     width: 100%;
     justify-content: center;
+  }
+
+  .metadata-bar {
+    padding: 0.5rem;
+  }
+
+  .image-container {
+    padding: 0.25rem;
+    overflow: hidden;
+  }
+
+  .image-container .photo-nav {
+    padding: 0.5rem 0.75rem;
+    font-size: 1.5rem;
+  }
+
+  .image-container button.left { left: 5px; }
+  .image-container button.right { right: 5px; }
+
+  .main-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 }
 

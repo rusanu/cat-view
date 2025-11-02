@@ -12,6 +12,20 @@ footer {
   margin-top: auto;
 }
 
+/* Mobile optimization: remove main padding on small screens */
+@media (max-width: 768px) {
+  main.container-fluid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  footer {
+    display: none; /* Hide footer on mobile to maximize photo space */
+  }
+}
+
 .navbar .rounded-circle {
   border: 2px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
