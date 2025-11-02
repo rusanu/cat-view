@@ -31,9 +31,10 @@ export class PhotoListComponent {
     return `rotate(${this.rotation}deg)`;
   }
 
-  getBrightnessFilter(level: number): string {
+  getBrightnessFilter(level: number | null): string {
     // Level 1 = normal (1.0), Level 5 = very bright (3.0)
-    const brightness = 1.0 + (level - 1) * 0.5;
+    const safeLevel = level ?? 3; // Default to 3 if null
+    const brightness = 1.0 + (safeLevel - 1) * 0.5;
     return `brightness(${brightness})`;
   }
 
