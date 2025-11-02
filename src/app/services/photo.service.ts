@@ -21,6 +21,7 @@ export class PhotoService {
   /**
    * Parse filename to extract timestamp
    * Example: cat_20251030_032811.jpg -> Date object
+   * IMPORTANT: Filenames are in UTC, so we parse as UTC
    */
   private parseFileName(fileName: string): Date | null {
     const match = fileName.match(this.PHOTO_PATTERN);
@@ -36,7 +37,40 @@ export class PhotoService {
     const minute = parseInt(timeStr.substring(2, 4), 10);
     const second = parseInt(timeStr.substring(4, 6), 10);
 
-    return new Date(year, month, day, hour, minute, second);
+    // Create UTC date (filenames are in UTC)
+    return new Date(Date.UTC(year, month, day, hour, minute, second));
+  }
+
+  /**
+   * Generate S3 prefixes for date range
+   * Returns prefixes like: ["cat_20251102_", "cat_20251101_", "cat_20251031_"]
+   * Includes extra day before/after to avoid midnight cutoff issues
+   * IMPORTANT: Uses UTC dates since filenames are in UTC
+   */
+  private getDatePrefixes(startDate: Date, endDate: Date): string[] {
+    const prefixes: string[] = [];
+
+    // Work in UTC since filenames are UTC-based
+    // Add one day before and after to avoid cutoff issues
+    const start = new Date(startDate);
+    start.setUTCDate(start.getUTCDate() - 1);
+    start.setUTCHours(0, 0, 0, 0);
+
+    const end = new Date(endDate);
+    end.setUTCDate(end.getUTCDate() + 1);
+    end.setUTCHours(0, 0, 0, 0);
+
+    const current = new Date(start);
+
+    while (current <= end) {
+      const year = current.getUTCFullYear();
+      const month = String(current.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(current.getUTCDate()).padStart(2, '0');
+      prefixes.push(`cat_${year}${month}${day}_`);
+      current.setUTCDate(current.getUTCDate() + 1);
+    }
+
+    return prefixes;
   }
 
   /**
@@ -58,15 +92,17 @@ export class PhotoService {
       startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
     }
 
-    // List all objects with reasonable limit
-    const response = await this.s3Service.listObjects('', maxPhotos);
+    // Get date-based prefixes (includes +/- 1 day to avoid midnight cutoff)
+    const prefixes = this.getDatePrefixes(startDate, endDate);
 
-    if (!response.Contents) {
-      return [];
-    }
+    // List objects for each prefix in parallel
+    const responses = await this.s3Service.listObjectsWithPrefixes(prefixes, 1000);
 
-    // Filter objects first
-    const filteredObjects = response.Contents.filter(obj => {
+    // Combine all results from all prefixes
+    const allObjects = responses.flatMap(response => response.Contents || []);
+
+    // Filter objects by exact date range and pattern
+    const filteredObjects = allObjects.filter(obj => {
       const key = obj.Key || '';
       const fileName = key.split('/').pop() || '';
 
@@ -122,15 +158,17 @@ export class PhotoService {
   async getNewPhotosSince(sinceTimestamp: Date, maxPhotos: number = 1000): Promise<Photo[]> {
     const now = new Date();
 
-    // List all objects
-    const response = await this.s3Service.listObjects('', maxPhotos);
+    // Get date-based prefixes (includes +/- 1 day to avoid cutoff)
+    const prefixes = this.getDatePrefixes(sinceTimestamp, now);
 
-    if (!response.Contents) {
-      return [];
-    }
+    // List objects for each prefix in parallel
+    const responses = await this.s3Service.listObjectsWithPrefixes(prefixes, 1000);
+
+    // Combine all results from all prefixes
+    const allObjects = responses.flatMap(response => response.Contents || []);
 
     // Filter for photos newer than sinceTimestamp
-    const filteredObjects = response.Contents.filter(obj => {
+    const filteredObjects = allObjects.filter(obj => {
       const key = obj.Key || '';
       const fileName = key.split('/').pop() || '';
 

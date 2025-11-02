@@ -66,6 +66,17 @@ export class S3Service {
   }
 
   /**
+   * List objects with multiple prefixes in parallel
+   * Useful for date-based prefix filtering
+   */
+  async listObjectsWithPrefixes(prefixes: string[], maxKeysPerPrefix: number = 1000): Promise<ListObjectsV2CommandOutput[]> {
+    const results = await Promise.all(
+      prefixes.map(prefix => this.listObjects(prefix, maxKeysPerPrefix))
+    );
+    return results;
+  }
+
+  /**
    * Get a pre-signed URL for an object (for direct browser access)
    * URLs are cached and valid for 1 hour
    */
