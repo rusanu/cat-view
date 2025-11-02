@@ -42,6 +42,7 @@
     "@types/jasmine": "~5.1.0",
     "@types/md5": "^2.3.6",
     "angular-eslint": "20.5.0",
+    "chokidar": "^4.0.3",
     "dotenv": "^17.2.3",
     "eslint": "^9.38.0",
     "jasmine-core": "~5.1.0",
