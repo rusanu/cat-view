@@ -37,6 +37,7 @@ yarn-error.log
 testem.log
 /typings
 .claude/settings.local.json
+.playwright-mcp/
 
 # System files
 .DS_Store

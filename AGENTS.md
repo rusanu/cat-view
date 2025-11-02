@@ -4,6 +4,10 @@
 - This is a Typescript Angular app used to browse and view pictures stored in an S3 bucket folder where a on-site embeded ESP32-CAM system uploads photos every 10 min. Files are named in a day/time based pattern, eg. `cat_20251030_032811.jpg`. The app should display by default last 24h photos. **Important** do not download all folder photos, there could be too many files to handle and too much traffic
 - along with each photo there is also a json metadat files with the same name as the phot, eg `cat_20251030_032811.json`. This contains, among other things, some important information: `uptime_seconds`, `temperature_celsius`, `humidity_percent`, `blanket_on`, `seconds_since_last_motion`. The app should display a time graph of temperature/humidity readings, along with reboot events (based on uptime) and a way to represent when the blanket was on/off.
 
+# Use Playwright for UX
+
+- You have Playwright MCP tools available. Use them to control the browser and test UX changes. If the Playwright MCP is not available, ask the user to fix it and stop
+
 ## Issue Tracking with bd (beads)
 
 **IMPORTANT**: This project uses **bd (beads)** for ALL issue tracking. Do NOT use markdown TODOs, task lists, or other tracking methods.
