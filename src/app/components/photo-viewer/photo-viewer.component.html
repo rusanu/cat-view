@@ -15,7 +15,8 @@
            class="full-image"
            [alt]="photo.fileName"
            class="main-photo"
-           [style.transform]="getRotationStyle()">
+           [style.transform]="getRotationStyle()"
+           [style.filter]="getBrightnessFilter(config.brightnessLevel$ | async)">
     </div>
 
     <div *ngIf="(config.showMetdata$ | async)" class="viewer-toolbar">

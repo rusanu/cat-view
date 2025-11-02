@@ -21,4 +21,36 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  align-items: center;
+}
+
+.brightness-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+}
+
+.brightness-label {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #f8f9fa;
+  white-space: nowrap;
+}
+
+.brightness-slider {
+  width: 100px;
+  height: 6px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.brightness-value {
+  min-width: 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: bold;
+  color: #ffc107;
 }

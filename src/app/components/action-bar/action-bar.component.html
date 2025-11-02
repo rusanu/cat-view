@@ -30,6 +30,22 @@
         <button class="btn btn-sm btn-secondary">
           <app-toggle-button [data$]="config.showGrid$" title="Show Grid"></app-toggle-button>
         </button>
+
+        <!-- Brightness Slider -->
+        <div class="brightness-control">
+          <label for="brightness-slider" class="brightness-label">☀ Brightness:</label>
+          <input type="range"
+                 id="brightness-slider"
+                 class="brightness-slider"
+                 min="1"
+                 max="5"
+                 step="1"
+                 [value]="config.brightnessLevel$ | async"
+                 (input)="onBrightnessChange($event)"
+                 title="Adjust brightness (1=normal, 5=very bright for dark photos)">
+          <span class="brightness-value">{{ config.brightnessLevel$ | async }}</span>
+        </div>
+
         <button *ngIf="(this.config.showGrid$ | async)" class="btn btn-sm btn-secondary" (click)="emitRefresh()"><span>⟲ Refresh</span></button>
       </div>
       <ul class="navbar-nav ms-auto" *ngIf="(isAuthenticated$ | async)">

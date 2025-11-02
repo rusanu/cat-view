@@ -10,7 +10,8 @@
            loading="lazy"
            (load)="onImageLoad($event)"
            (error)="onImageError($event)"
-           [style.transform]="getRotationStyle()">
+           [style.transform]="getRotationStyle()"
+           [style.filter]="getBrightnessFilter(config.brightnessLevel$ | async)">
       <div class="photo-time-overlay">
         {{ formatTime(photo.timestamp) }}
       </div>

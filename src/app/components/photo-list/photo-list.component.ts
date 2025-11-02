@@ -19,7 +19,7 @@ export class PhotoListComponent {
   private destroy$ = new Subject<void>();
   private rotation: number = 0;
 
-  constructor(private config:ActionConfigService) {
+  constructor(public config:ActionConfigService) {
     config.rotation$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(rotation => {
@@ -29,6 +29,12 @@ export class PhotoListComponent {
 
   getRotationStyle(): string {
     return `rotate(${this.rotation}deg)`;
+  }
+
+  getBrightnessFilter(level: number): string {
+    // Level 1 = normal (1.0), Level 5 = very bright (3.0)
+    const brightness = 1.0 + (level - 1) * 0.5;
+    return `brightness(${brightness})`;
   }
 
   onPhotoClick(photo: Photo) {

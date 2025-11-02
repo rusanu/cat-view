@@ -10,6 +10,7 @@ interface IConfig {
   showGrid: boolean;
   rotation: number;
   showMetadata: boolean;
+  brightnessLevel: number; // 1-5, where 1=normal, 5=very bright
 }
 
 @Injectable({
@@ -21,12 +22,14 @@ export class ActionConfigService {
   public rotation$ = new BehaviorSubject<number>(INITIAL_ROTATION);
   public showGrid$ = new BehaviorSubject<boolean>(true);
   public showMetdata$ = new BehaviorSubject<boolean>(false);
+  public brightnessLevel$ = new BehaviorSubject<number>(3); // Default 3 (moderate boost for night photos)
 
   private config: IConfig = {
     autoRefresh: true,
     rotation: INITIAL_ROTATION,
     showGrid: true,
-    showMetadata: false
+    showMetadata: false,
+    brightnessLevel: 3
   };
 
   constructor() {
@@ -45,6 +48,7 @@ export class ActionConfigService {
         this.rotation$.next(this.config.rotation);
         this.showGrid$.next(this.config.showGrid);
         this.showMetdata$.next(this.config.showMetadata);
+        this.brightnessLevel$.next(this.config.brightnessLevel);
         }
     }
     catch(err) {
@@ -69,6 +73,11 @@ export class ActionConfigService {
 
     this.showMetdata$.subscribe(value => {
       this.config.showMetadata = value;
+      this.saveConfig();
+    });
+
+    this.brightnessLevel$.subscribe(value => {
+      this.config.brightnessLevel = value;
       this.saveConfig();
     });
   }

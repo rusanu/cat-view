@@ -44,4 +44,10 @@ export class ActionBarComponent {
   resetRotation() {
     this.config.resetRotation();
   }
+
+  onBrightnessChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const level = parseInt(input.value, 10);
+    this.config.brightnessLevel$.next(level);
+  }
 }

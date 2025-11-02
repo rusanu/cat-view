@@ -68,6 +68,13 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
     return `rotate(${this.rotation}deg)`;
   }
 
+  getBrightnessFilter(level: number): string {
+    // Level 1 = normal (1.0), Level 5 = very bright (3.0)
+    // Linear scale: 1->1.0, 2->1.5, 3->2.0, 4->2.5, 5->3.0
+    const brightness = 1.0 + (level - 1) * 0.5;
+    return `brightness(${brightness})`;
+  }
+
   formatDateTime(date: Date): string {
     return date.toLocaleString('en-US', {
       year: 'numeric',
