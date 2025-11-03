@@ -4,36 +4,36 @@
       <i class="bi bi-camera"></i> Cat View
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Comutare navigare">
       <span class="navbar-toggler-icon"></span>
     </button>
 
     <div class="collapse navbar-collapse" id="navbarNav">
       <div class="toolbar-controls">
-        <button class="btn btn-sm btn-secondary" (click)="rotateCounterClockwise()" title="Rotate left 90°">
+        <button class="btn btn-sm btn-secondary" (click)="rotateCounterClockwise()" title="Rotește stânga 90°">
           <span>↶ -90°</span>
         </button>
-        <button class="btn btn-sm btn-secondary" (click)="resetRotation()" title="Reset rotation">
+        <button class="btn btn-sm btn-secondary" (click)="resetRotation()" title="Resetează rotația">
           <span>0° Reset</span>
         </button>
-        <button class="btn btn-sm btn-secondary" (click)="rotateClockwise()" title="Rotate right 90°">
+        <button class="btn btn-sm btn-secondary" (click)="rotateClockwise()" title="Rotește dreapta 90°">
           <span>↷ +90°</span>
         </button>
 
 
          <button class="btn btn-sm btn-secondary">
-          <app-toggle-button [data$]="config.showMetdata$" title="Photo Details"></app-toggle-button>
+          <app-toggle-button [data$]="config.showMetdata$" title="Detalii Poză"></app-toggle-button>
         </button>
          <button class="btn btn-sm btn-secondary">
-          <app-toggle-button [data$]="config.autoRefresh$" title="Auto Refresh"></app-toggle-button>
+          <app-toggle-button [data$]="config.autoRefresh$" title="Reîmprospătare Automată"></app-toggle-button>
         </button>
         <button class="btn btn-sm btn-secondary">
-          <app-toggle-button [data$]="config.showGrid$" title="Show Grid"></app-toggle-button>
+          <app-toggle-button [data$]="config.showGrid$" title="Arată Grilă"></app-toggle-button>
         </button>
 
         <!-- Brightness Slider -->
         <div class="brightness-control">
-          <label for="brightness-slider" class="brightness-label">☀ Brightness:</label>
+          <label for="brightness-slider" class="brightness-label">☀ Luminozitate:</label>
           <input type="range"
                  id="brightness-slider"
                  class="brightness-slider"
@@ -42,25 +42,25 @@
                  step="1"
                  [value]="config.brightnessLevel$ | async"
                  (input)="onBrightnessChange($event)"
-                 title="Adjust brightness (1=normal, 5=very bright for dark photos)">
+                 title="Ajustează luminozitatea (1=normal, 5=foarte luminos pentru poze întunecate)">
           <span class="brightness-value">{{ config.brightnessLevel$ | async }}</span>
         </div>
 
-        <button *ngIf="(this.config.showGrid$ | async)" class="btn btn-sm btn-secondary" (click)="emitRefresh()"><span>⟲ Refresh</span></button>
+        <button *ngIf="(this.config.showGrid$ | async)" class="btn btn-sm btn-secondary" (click)="emitRefresh()"><span>⟲ Reîmprospătează</span></button>
       </div>
       <ul class="navbar-nav ms-auto" *ngIf="(isAuthenticated$ | async)">
         <li class="nav-item d-flex align-items-center">
           <img [src]="(userProfile.avatarUrl$ | async)"
-               alt="User avatar"
+               alt="Avatar utilizator"
                class="rounded-circle me-2"
                width="32"
                height="32">
           <span class="navbar-text me-3">
-            {{ (userProfile.displayName$ | async) || 'User' }}
+            {{ (userProfile.displayName$ | async) || 'Utilizator' }}
           </span>
         </li>
         <li class="nav-item">
-          <button class="btn btn-outline-light btn-sm" (click)="logout()">Sign Out</button>
+          <button class="btn btn-outline-light btn-sm" (click)="logout()">Deconectare</button>
         </li>
       </ul>
     </div>

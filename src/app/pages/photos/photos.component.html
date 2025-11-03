@@ -4,22 +4,22 @@
   <!-- Loading State -->
   <div *ngIf="loading" class="text-center py-5">
     <div class="spinner-border" role="status">
-      <span class="visually-hidden">Loading...</span>
+      <span class="visually-hidden">Se încarcă...</span>
     </div>
-    <p class="mt-2">Loading photos...</p>
+    <p class="mt-2">Se încarcă pozele...</p>
   </div>
 
   <!-- Error State -->
   <div *ngIf="error && !loading" class="alert alert-danger mx-3">
-    <h5>Error Loading Photos</h5>
+    <h5>Eroare la Încărcarea Pozelor</h5>
     <p>{{ error }}</p>
-    <button class="btn btn-danger btn-sm" (click)="loadPhotos()">Retry</button>
+    <button class="btn btn-danger btn-sm" (click)="loadPhotos()">Reîncearcă</button>
   </div>
 
   <!-- No Photos Found -->
   <div *ngIf="!loading && !error && photos.length === 0" class="alert alert-info mx-3">
-    <h5>No Photos Found</h5>
-    <p>No photos found for the selected date range (last 24 hours by default).</p>
+    <h5>Nu s-au Găsit Poze</h5>
+    <p>Nu s-au găsit poze pentru intervalul de date selectat (implicit ultimele 24 de ore).</p>
   </div>
 
   <!-- Split Panel Layout -->

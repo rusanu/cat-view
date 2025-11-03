@@ -1,7 +1,7 @@
 <div class="photo-viewer-container">
   <!-- No Photo Selected -->
   <div *ngIf="!photo" class="no-photo">
-    <p class="text-muted">Select a photo to view</p>
+    <p class="text-muted">Selectează o poză pentru vizualizare</p>
   </div>
 
   <!-- Photo Display -->
@@ -30,36 +30,36 @@
     <div *ngIf="(config.showMetdata$ | async)" class="metadata-bar">
       <div *ngIf="metadata" class="metadata-grid">
         <div class="metadata-item">
-          <span class="metadata-label">Temperature:</span>
+          <span class="metadata-label">Temperatură:</span>
           <span class="metadata-value">{{ metadata.temperature_celsius }}°C</span>
         </div>
         <div class="metadata-item">
-          <span class="metadata-label">Humidity:</span>
+          <span class="metadata-label">Umiditate:</span>
           <span class="metadata-value">{{ metadata.humidity_percent }}%</span>
         </div>
         <div class="metadata-item">
-          <span class="metadata-label">Blanket:</span>
+          <span class="metadata-label">Pătură:</span>
           <span class="metadata-value" [class.status-on]="metadata.blanket_on">
-            {{ metadata.blanket_on ? 'ON' : 'OFF' }}
+            {{ metadata.blanket_on ? 'PORNITĂ' : 'OPRITĂ' }}
           </span>
         </div>
         <div class="metadata-item">
-          <span class="metadata-label">Cat:</span>
+          <span class="metadata-label">Pisică:</span>
           <span class="metadata-value" [class.status-on]="metadata.cat_present">
-            {{ metadata.cat_present ? 'Present' : 'Away' }}
+            {{ metadata.cat_present ? 'Prezentă' : 'Plecat' }}
           </span>
         </div>
         <div class="metadata-item">
-          <span class="metadata-label">Motion:</span>
-          <span class="metadata-value">{{ metadata.seconds_since_last_motion }}s ago</span>
+          <span class="metadata-label">Mișcare:</span>
+          <span class="metadata-value">acum {{ metadata.seconds_since_last_motion }}s</span>
         </div>
         <div class="metadata-item">
-          <span class="metadata-label">Uptime:</span>
+          <span class="metadata-label">Timp funcționare:</span>
           <span class="metadata-value">{{ formatUptime(metadata.uptime_seconds) }}</span>
         </div>
       </div>
-      <span *ngIf="metadataLoading" class="text-muted">Loading metadata...</span>
-      <span *ngIf="!metadata && !metadataLoading && photo" class="text-muted">No metadata available</span>
+      <span *ngIf="metadataLoading" class="text-muted">Se încarcă metadatele...</span>
+      <span *ngIf="!metadata && !metadataLoading && photo" class="text-muted">Nu există metadate disponibile</span>
     </div>
   </div>
 </div>
