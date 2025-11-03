@@ -10,7 +10,18 @@ export const authGuard: CanActivateFn = (route, state) => {
     return true;
   }
 
-  // Redirect to signin page if not authenticated
+  // Check if we're already showing an auth error (token expired)
+  // In this case, allow access to show cached photos with error banner
+  let hasAuthError = false;
+  authService.authError$.subscribe(error => hasAuthError = !!error).unsubscribe();
+
+  if (hasAuthError) {
+    // Allow access but user will see auth error banner
+    return true;
+  }
+
+  // No token and no auth error - user never logged in
+  // Redirect to signin page
   router.navigate(['/signin']);
   return false;
 };

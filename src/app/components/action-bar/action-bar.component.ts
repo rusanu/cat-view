@@ -19,6 +19,10 @@ export class ActionBarComponent {
     return this.authService.isAuthenticated$;
   }
 
+  public get authError$() {
+    return this.authService.authError$;
+  }
+
   constructor(
     public userProfile:UserProfileService,
     public config: ActionConfigService,
@@ -27,6 +31,10 @@ export class ActionBarComponent {
 
   public logout() {
     this.authService.logout();
+  }
+
+  public reAuthenticate() {
+    this.authService.reAuthenticate();
   }
 
   emitRefresh() {
@@ -51,3 +59,4 @@ export class ActionBarComponent {
     this.config.brightnessLevel$.next(level);
   }
 }
+

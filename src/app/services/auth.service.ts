@@ -11,6 +11,9 @@ export class AuthService {
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   public isAuthenticated$: Observable<boolean> = this.isAuthenticatedSubject.asObservable();
 
+  private authErrorSubject = new BehaviorSubject<string | null>(null);
+  public authError$: Observable<string | null> = this.authErrorSubject.asObservable();
+
   constructor(
     private oauthService: OAuthService,
     private router: Router
@@ -46,6 +49,7 @@ export class AuthService {
       if (event.type === 'token_received') {
         console.log('Token received successfully');
         this.isAuthenticatedSubject.next(true);
+        this.authErrorSubject.next(null); // Clear any auth errors
       } else if (event.type === 'token_error') {
         console.error('Token error:', event);
         // Token is invalid, user needs to re-authenticate
@@ -115,12 +119,25 @@ export class AuthService {
 
   private handleTokenRefreshError(): void {
     // Token refresh failed, user needs to re-authenticate
-    console.warn('Token refresh failed. Redirecting to login...');
+    console.warn('Token refresh failed. Showing auth error banner...');
     this.isAuthenticatedSubject.next(false);
-    // Clear the failed tokens
+    // Set auth error message instead of redirecting
+    this.authErrorSubject.next('Sesiunea ta a expirat. Te rugăm să te autentifici din nou.');
+    // Clear the failed tokens but don't redirect
     this.oauthService.logOut(true); // noRedirectToLogoutUrl = true
-    // Redirect to signin page
-    this.router.navigate(['/signin']);
+    // Only redirect if we're on the signin page already
+    if (this.router.url === '/signin') {
+      this.router.navigate(['/signin']);
+    }
+  }
+
+  public clearAuthError(): void {
+    this.authErrorSubject.next(null);
+  }
+
+  public reAuthenticate(): void {
+    this.clearAuthError();
+    this.login();
   }
 
   /**

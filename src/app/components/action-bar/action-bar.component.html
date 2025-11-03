@@ -1,3 +1,14 @@
+<!-- Auth Error Banner -->
+<div *ngIf="(authError$ | async) as authError" class="alert alert-danger m-0 rounded-0 d-flex align-items-center justify-content-between" role="alert">
+  <div class="d-flex align-items-center">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <span>{{ authError }}</span>
+  </div>
+  <button class="btn btn-sm btn-light" (click)="reAuthenticate()">
+    Autentifică-te
+  </button>
+</div>
+
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container-fluid">
     <a class="navbar-brand" href="#">
