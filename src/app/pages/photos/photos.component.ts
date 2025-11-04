@@ -98,7 +98,6 @@ export class PhotosComponent implements OnInit, OnDestroy {
     try {
       this.loading = true;
       this.error = null;
-      this.isAuthError = false;
       this.photos = await this.photoService.getPhotos(this.startDate, this.endDate);
 
       // Auto-select first photo if available
@@ -107,7 +106,6 @@ export class PhotosComponent implements OnInit, OnDestroy {
       }
     } catch (err: any) {
       this.error = err.message || 'Failed to load photos';
-      this.isAuthError = this.isAuthenticationError(err);
       console.error('Error loading photos:', err);
     } finally {
       this.loading = false;
@@ -157,7 +155,6 @@ export class PhotosComponent implements OnInit, OnDestroy {
         }
       } catch (err: any) {
         this.error = err.message || 'Failed to refresh photos';
-        this.isAuthError = this.isAuthenticationError(err);
         console.error('Error refreshing photos:', err);
       } finally {
         this.refreshing = false;
@@ -269,22 +266,7 @@ export class PhotosComponent implements OnInit, OnDestroy {
     }
   };
 
-  /**
-   * Check if an error is an authentication/token error
-   */
-  private isAuthenticationError(err: any): boolean {
-    const message = err.message || '';
-    return message.toLowerCase().includes('session') ||
-           message.toLowerCase().includes('sign in') ||
-           message.toLowerCase().includes('token') ||
-           message.toLowerCase().includes('authenticate') ||
-           message.toLowerCase().includes('expired');
-  }
-
-  /**
-   * Navigate to sign-in page
-   */
-  signIn() {
-    this.router.navigate(['/signin']);
+  dismissError()  {
+    this.error = null;
   }
 }

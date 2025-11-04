@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { OAuthService, AuthConfig } from 'angular-oauth2-oidc';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -13,6 +13,9 @@ export class AuthService {
 
   private authErrorSubject = new BehaviorSubject<string | null>(null);
   public authError$: Observable<string | null> = this.authErrorSubject.asObservable();
+
+  private expiredTokenSubject = new Subject<void>();
+  public expiredToken$:Observable<void> = this.expiredTokenSubject.asObservable();
 
   constructor(
     private oauthService: OAuthService,
@@ -32,9 +35,6 @@ export class AuthService {
       // Use implicit flow for SPAs - it's designed for browser-based apps
       // Code flow with PKCE requires backend support for token refresh in practice
       responseType: 'id_token token',
-      // Configure silent refresh (will use iframe with prompt=none)
-      silentRefreshRedirectUri: this.getRedirectUri(),
-      silentRefreshTimeout: 10000, // 10 second timeout for silent refresh
       // For Google, we need to use prompt=none for silent refresh attempts
       customQueryParams: {
         'access_type': 'online', // Online access for implicit flow
@@ -59,6 +59,11 @@ export class AuthService {
       } else if (event.type === 'session_terminated' || event.type === 'session_error') {
         console.error('Session error:', event);
         this.handleTokenRefreshError();
+      } else if (event.type == "token_expires") {
+        console.warn("OAuth token has expired");
+        this.isAuthenticatedSubject.next(false);
+        this.authErrorSubject.next("Token has expired"); 
+        this.expiredTokenSubject.next();
       }
     });
   }
@@ -73,11 +78,9 @@ export class AuthService {
     const origin = window.location.origin;
 
     const cleanBaseHref = baseHref.endsWith('/') ? baseHref.slice(0, -1) : baseHref;
-    console.log('ret:', baseElement, baseHref, cleanBaseHref, origin);
 
     // Remove trailing slash from baseHref if present, then add /signin
 
-    //return `${origin}/cat-view/signin`
     return `${origin}${cleanBaseHref}/signin`;
   }
 
@@ -88,6 +91,7 @@ export class AuthService {
   public logout(): void {
     this.oauthService.logOut();
     this.isAuthenticatedSubject.next(false);
+    this.authErrorSubject.next(null);
     this.router.navigate(['/signin']);
   }
 
@@ -131,72 +135,7 @@ export class AuthService {
     }
   }
 
-  public clearAuthError(): void {
-    this.authErrorSubject.next(null);
-  }
-
   public reAuthenticate(): void {
-    this.clearAuthError();
-    this.login();
-  }
-
-  /**
-   * Check if the current token is expired or about to expire
-   * @param bufferSeconds Number of seconds before expiration to consider token as expired (default: 300 = 5 minutes)
-   */
-  public isTokenExpiringSoon(bufferSeconds: number = 300): boolean {
-    const expiresAt = this.oauthService.getAccessTokenExpiration();
-    if (!expiresAt) {
-      return true; // No expiration means no valid token
-    }
-    const now = Date.now();
-    const bufferMs = bufferSeconds * 1000;
-    return expiresAt < (now + bufferMs);
-  }
-
-  /**
-   * Manually trigger a token refresh using silent refresh (iframe with prompt=none)
-   * Note: This may fail if user's Google session has expired or requires interaction
-   */
-  public async refreshToken(): Promise<boolean> {
-    try {
-      console.log('Attempting silent token refresh...');
-
-      // Try silent refresh with Google (uses iframe with prompt=none)
-      await this.oauthService.silentRefresh({
-        customQueryParams: {
-          'prompt': 'none' // Don't show UI, fail if interaction needed
-        }
-      });
-
-      const hasValidToken = this.oauthService.hasValidAccessToken();
-
-      if (hasValidToken) {
-        console.log('Token refreshed successfully via silent refresh');
-        this.isAuthenticatedSubject.next(true);
-      }
-
-      return hasValidToken;
-    } catch (error: any) {
-      console.warn('Silent token refresh failed:', error);
-
-      // Silent refresh failed - this is expected if:
-      // - User's Google session expired
-      // - User needs to grant consent again
-      // - User is in incognito mode
-      // - Third-party cookies are blocked
-
-      // Don't call handleTokenRefreshError here - let the caller decide
-      // This prevents automatic redirects during proactive refresh attempts
-      return false;
-    }
-  }
-
-  /**
-   * Check if we have a refresh token
-   * Note: Implicit flow doesn't provide refresh tokens
-   */
-  public hasRefreshToken(): boolean {
-    return !!this.oauthService.getRefreshToken();
+    this.logout();
   }
 }

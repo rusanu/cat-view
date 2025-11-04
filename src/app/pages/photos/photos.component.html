@@ -1,5 +1,11 @@
 <app-action-bar (refresh)="refreshPhotos()"></app-action-bar>
 
+<!-- Other Errors (Regular Error Banner) -->
+<div *ngIf="error && !loading" class="alert alert-info alert-dismissible fade show mx-3" role="alert">
+  <p class="mb-0">{{ error }}</p>
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" (click)="dismissError()"></button>
+</div>          
+
 <div class="photos-container">
   <!-- Loading State -->
   <div *ngIf="loading" class="text-center py-5">
@@ -9,24 +15,8 @@
     <p class="mt-2">Se încarcă pozele...</p>
   </div>
 
-  <!-- Auth Error State (Small Muted Banner) -->
-  <div *ngIf="error && !loading && isAuthError" class="alert alert-warning alert-dismissible fade show mx-3 py-2" role="alert">
-    <small>
-      <strong>Sesiunea a expirat.</strong>
-      <a href="javascript:void(0)" (click)="signIn()" class="alert-link">Autentifică-te din nou</a> pentru a continua actualizările.
-    </small>
-    <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert" aria-label="Close"></button>
-  </div>
-
-  <!-- Other Errors (Regular Error Banner) -->
-  <div *ngIf="error && !loading && !isAuthError" class="alert alert-danger mx-3">
-    <h5>{{ photos.length > 0 ? 'Eroare la Actualizare' : 'Eroare la Încărcarea Pozelor' }}</h5>
-    <p>{{ error }}</p>
-    <button class="btn btn-danger btn-sm" (click)="photos.length > 0 ? refreshPhotos() : loadPhotos()">Reîncearcă</button>
-  </div>
-
   <!-- No Photos Found -->
-  <div *ngIf="!loading && !error && photos.length === 0" class="alert alert-info mx-3">
+  <div *ngIf="!loading && photos.length === 0" class="alert alert-info mx-3">
     <h5>Nu s-au Găsit Poze</h5>
     <p>Nu s-au găsit poze pentru intervalul de date selectat (implicit ultimele 24 de ore).</p>
   </div>

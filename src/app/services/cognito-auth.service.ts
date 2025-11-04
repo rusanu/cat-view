@@ -1,8 +1,9 @@
-import { Injectable } from '@angular/core';
+import { EventEmitter, Injectable } from '@angular/core';
 import { fromCognitoIdentityPool } from '@aws-sdk/credential-providers';
 import { AwsCredentialIdentity } from '@aws-sdk/types';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
+import { BehaviorSubject, Observable, Subject, Subscription, takeUntil, timer } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -17,24 +18,11 @@ export class CognitoAuthService {
    * @returns Promise of AWS credentials
    */
   async getAwsCredentials(): Promise<AwsCredentialIdentity> {
+    const now = Date.now();
+
     // If we have cached credentials that are still valid, return them
-    if (this.cachedCredentials && this.isCredentialValid(this.cachedCredentials)) {
+    if (this.cachedCredentials && ((this.cachedCredentials.expiration?.getTime() ?? now) >= now)) {
       return this.cachedCredentials;
-    }
-
-    // Check if the OAuth token is expired or about to expire
-    if (this.authService.isTokenExpiringSoon()) {
-      console.log('OAuth token is expiring soon, attempting silent refresh...');
-
-      // Try silent refresh (may fail if Google session expired or user interaction required)
-      const refreshed = await this.authService.refreshToken();
-
-      if (!refreshed) {
-        console.warn('Silent token refresh failed. User needs to re-authenticate.');
-        throw new Error('Your session has expired. Please sign in again to continue.');
-      }
-
-      console.log('Token refreshed successfully, proceeding with Cognito exchange');
     }
 
     // Get the Google ID token from the auth service
@@ -48,7 +36,6 @@ export class CognitoAuthService {
       throw new Error('Cognito Identity Pool ID not configured in environment.');
     }
 
-    try {
       // Create credential provider using Cognito Identity Pool
       const credentialProvider = fromCognitoIdentityPool({
         clientConfig: { region: environment.aws.region },
@@ -60,60 +47,9 @@ export class CognitoAuthService {
 
       // Get credentials
       this.cachedCredentials = await credentialProvider();
+      console.log('Cognito:', this.cachedCredentials);
+
       return this.cachedCredentials;
-    } catch (error) {
-      console.error('Error getting AWS credentials from Cognito:', error);
-
-      // If the error is related to token validation, try refreshing the token once
-      if (error instanceof Error && (
-        error.message.includes('Token') ||
-        error.message.includes('Invalid') ||
-        error.message.includes('expired')
-      )) {
-        console.log('Token error detected, attempting silent refresh...');
-
-        const refreshed = await this.authService.refreshToken();
-        if (refreshed) {
-          // Retry with the new token
-          const newIdToken = this.authService.getIdToken();
-          if (newIdToken) {
-            console.log('Retrying Cognito exchange with refreshed token');
-            const retryProvider = fromCognitoIdentityPool({
-              clientConfig: { region: environment.aws.region },
-              identityPoolId: environment.cognito.identityPoolId,
-              logins: {
-                'accounts.google.com': newIdToken
-              }
-            });
-            this.cachedCredentials = await retryProvider();
-            return this.cachedCredentials;
-          }
-        } else {
-          console.warn('Silent refresh failed during retry. User needs to re-authenticate.');
-          throw new Error('Your session has expired. Please sign in again.');
-        }
-      }
-
-      throw new Error('Failed to get AWS credentials from Cognito Identity Pool');
-    }
-  }
-
-  /**
-   * Checks if the credentials are still valid
-   * @param credentials The credentials to check
-   * @returns true if credentials are valid
-   */
-  private isCredentialValid(credentials: AwsCredentialIdentity): boolean {
-    if (!credentials.expiration) {
-      return true; // No expiration means always valid
-    }
-
-    // Check if expiration is more than 5 minutes in the future
-    const expirationTime = credentials.expiration.getTime();
-    const now = new Date().getTime();
-    const fiveMinutes = 5 * 60 * 1000;
-
-    return expirationTime > (now + fiveMinutes);
   }
 
   /**
