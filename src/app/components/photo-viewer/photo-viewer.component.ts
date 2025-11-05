@@ -89,15 +89,43 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
   }
 
   formatUptime(seconds: number): string {
-    const hours = Math.floor(seconds / 3600);
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
 
-    if (hours > 0) {
+    // >= 30 days: show months and days
+    if (days >= 30) {
+      const months = Math.floor(days / 30);
+      const remainingDays = days % 30;
+      if (remainingDays > 0) {
+        return `${months}luni ${remainingDays}z`;
+      }
+      return `${months}luni`;
+    }
+    // >= 7 days: show weeks and days
+    else if (days >= 7) {
+      const weeks = Math.floor(days / 7);
+      const remainingDays = days % 7;
+      if (remainingDays > 0) {
+        return `${weeks}săpt ${remainingDays}z`;
+      }
+      return `${weeks}săpt`;
+    }
+    // >= 1 day: show days and hours
+    else if (days > 0) {
+      return `${days}z ${hours}h`;
+    }
+    // >= 1 hour: show hours and minutes
+    else if (hours > 0) {
       return `${hours}h ${minutes}m`;
-    } else if (minutes > 0) {
+    }
+    // >= 1 minute: show minutes and seconds
+    else if (minutes > 0) {
       return `${minutes}m ${secs}s`;
-    } else {
+    }
+    // < 1 minute: show seconds only
+    else {
       return `${secs}s`;
     }
   }
