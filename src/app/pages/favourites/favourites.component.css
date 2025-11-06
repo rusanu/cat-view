@@ -1,0 +1,117 @@
+.photos-container {
+  height: calc(100vh - 100px);
+  overflow: hidden;
+}
+
+.split-panel {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+.photo-list-panel {
+  overflow-y: auto;
+  border-right: 1px solid #dee2e6;
+  flex-shrink: 0;
+}
+
+.photo-list-container {
+  height: 100%;
+}
+
+.panel-divider {
+  width: 5px;
+  cursor: col-resize;
+  background: #f8f9fa;
+  position: relative;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.panel-divider:hover {
+  background: #dee2e6;
+}
+
+.panel-divider:active {
+  background: #adb5bd;
+}
+
+.divider-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 40px;
+  background: #6c757d;
+  border-radius: 3px;
+}
+
+.photo-viewer-panel {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.viewer-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.viewer-content.with-graphs {
+  display: flex;
+  flex-direction: column;
+}
+
+.photo-section {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.photo-section.split {
+  flex: none;
+}
+
+.vertical-divider {
+  height: 5px;
+  cursor: row-resize;
+  background: #f8f9fa;
+  position: relative;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.vertical-divider:hover {
+  background: #dee2e6;
+}
+
+.vertical-divider:active {
+  background: #adb5bd;
+}
+
+.vertical-divider-handle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  height: 3px;
+  width: 40px;
+  background: #6c757d;
+  border-radius: 3px;
+}
+
+.graphs-section {
+  flex: none;
+  overflow: hidden;
+}
+
+.view-switcher {
+  display: flex;
+  align-items: center;
+  padding-top: 0.5rem;
+}

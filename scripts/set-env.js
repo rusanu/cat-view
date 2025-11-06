@@ -13,6 +13,7 @@ export const environment = {
     region: '${envConfig.AWS_REGION || 'us-east-1'}',
     bucketName: '${envConfig.AWS_BUCKET_NAME || ''}',
     bucketFolder: '${envConfig.AWS_BUCKET_FOLDER || ''}',
+    bucketFavouritesFolder: '${envConfig.AWS_BUCKET_FAVOURITES_FOLDER || ''}',
   },
   google: {
     clientId: '${envConfig.GOOGLE_CLIENT_ID || ''}',
