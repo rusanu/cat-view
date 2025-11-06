@@ -1,20 +1,22 @@
-<app-action-bar (refresh)="refreshPhotos()"></app-action-bar>
+<app-action-bar (refresh)="refreshFavourites()"></app-action-bar>
 
 <!-- View switcher -->
 <div class="view-switcher mx-3 mb-2">
-  <button class="btn btn-sm btn-outline-secondary" (click)="navigateToFavourites()">
+  <button class="btn btn-sm btn-outline-secondary" (click)="navigateToPhotos()">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-      <polygon points="8 1.333 10.06 5.507 14.667 6.18 11.333 9.427 12.12 14.007 8 11.84 3.88 14.007 4.667 9.427 1.333 6.18 5.94 5.507 8 1.333"/>
+      <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/>
+      <path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"/>
     </svg>
-    Vezi Favorite
+    Înapoi la Pozele Normale
   </button>
+  <span class="badge bg-primary ms-2">{{ photos.length }} poze favorite</span>
 </div>
 
-<!-- Other Errors (Regular Error Banner) -->
+<!-- Error Banner -->
 <div *ngIf="error && !loading" class="alert alert-info alert-dismissible fade show mx-3" role="alert">
   <p class="mb-0">{{ error }}</p>
   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" (click)="dismissError()"></button>
-</div>          
+</div>
 
 <div class="photos-container">
   <!-- Loading State -->
@@ -22,13 +24,14 @@
     <div class="spinner-border" role="status">
       <span class="visually-hidden">Se încarcă...</span>
     </div>
-    <p class="mt-2">Se încarcă pozele...</p>
+    <p class="mt-2">Se încarcă pozele favorite...</p>
   </div>
 
-  <!-- No Photos Found -->
+  <!-- No Favourites Found -->
   <div *ngIf="!loading && photos.length === 0" class="alert alert-info mx-3">
-    <h5>Nu s-au Găsit Poze</h5>
-    <p>Nu s-au găsit poze pentru intervalul de date selectat (implicit ultimele 24 de ore).</p>
+    <h5>Nu Ai Poze Favorite</h5>
+    <p>Nu ai nicio poză marcată ca favorită încă. Adaugă poze la favorite din vizualizarea principală.</p>
+    <button class="btn btn-primary mt-2" (click)="navigateToPhotos()">Mergi la Pozele Normale</button>
   </div>
 
   <!-- Split Panel Layout -->
@@ -38,6 +41,7 @@
       <app-photo-list class="photo-list-container"
         [photos]="photos"
         [selectedPhoto]="selectedPhoto"
+        [showFavourites]="false"
         (photoSelected)="onPhotoSelected($event)">
       </app-photo-list>
     </div>

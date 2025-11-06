@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { S3Client, ListObjectsV2Command, GetObjectCommand, ListObjectsV2CommandOutput } from '@aws-sdk/client-s3';
+import { S3Client, ListObjectsV2Command, GetObjectCommand, ListObjectsV2CommandOutput, CopyObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { environment } from '../../environments/environment.development';
 import { CognitoAuthService } from './cognito-auth.service';
@@ -10,6 +10,7 @@ import { CognitoAuthService } from './cognito-auth.service';
 export class S3Service {
   private bucketName: string;
   private bucketFolder: string;
+  private bucketFavouritesFolder: string;
   private urlCache: Map<string, { url: string, expires: number }> = new Map();
 
   constructor(
@@ -17,6 +18,7 @@ export class S3Service {
   ) {
     this.bucketName = environment.aws.bucketName;
     this.bucketFolder = environment.aws.bucketFolder;
+    this.bucketFavouritesFolder = environment.aws.bucketFavouritesFolder;
 
     // Validate that Cognito is configured
     if (!environment.cognito.identityPoolId) {
@@ -120,5 +122,54 @@ export class S3Service {
     const client = await this.getS3Client();
     const response = await client.send(command);
     return response;
+  }
+
+  /**
+   * Check if an object exists in S3
+   */
+  async objectExists(key: string): Promise<boolean> {
+    try {
+      const command = new HeadObjectCommand({
+        Bucket: this.bucketName,
+        Key: key
+      });
+
+      const client = await this.getS3Client();
+      await client.send(command);
+      return true;
+    } catch (error: any) {
+      if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Copy an object within the same S3 bucket
+   */
+  async copyObject(sourceKey: string, destinationKey: string): Promise<void> {
+    const command = new CopyObjectCommand({
+      Bucket: this.bucketName,
+      CopySource: `${this.bucketName}/${sourceKey}`,
+      Key: destinationKey
+    });
+
+    const client = await this.getS3Client();
+    await client.send(command);
+  }
+
+  /**
+   * Get the favourites folder path
+   */
+  getFavouritesFolder(): string {
+    return this.bucketFavouritesFolder;
+  }
+
+  /**
+   * Get the regular bucket folder path
+   */
+  getBucketFolder(): string {
+    return this.bucketFolder;
   }
 }
