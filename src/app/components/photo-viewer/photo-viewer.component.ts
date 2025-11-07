@@ -21,6 +21,9 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
   metadataLoading = false;
 
   private destroy$ = new Subject<void>();
+  private touchStartX: number = 0;
+  private touchStartY: number = 0;
+  private readonly swipeThreshold = 50; // Minimum pixels to trigger swipe
 
   constructor(private metadataService: MetadataService, public config:ActionConfigService) {
     config.rotation$.pipe(
@@ -99,6 +102,30 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
       return `${minutes}m ${secs}s`;
     } else {
       return `${secs}s`;
+    }
+  }
+
+  onTouchStart(event: TouchEvent): void {
+    this.touchStartX = event.touches[0].clientX;
+    this.touchStartY = event.touches[0].clientY;
+  }
+
+  onTouchEnd(event: TouchEvent): void {
+    const touchEndX = event.changedTouches[0].clientX;
+    const touchEndY = event.changedTouches[0].clientY;
+
+    const deltaX = touchEndX - this.touchStartX;
+    const deltaY = touchEndY - this.touchStartY;
+
+    // Only trigger swipe if horizontal movement is greater than vertical (to avoid interfering with scrolling)
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > this.swipeThreshold) {
+      if (deltaX > 0) {
+        // Swipe right - go to previous photo
+        this.emitPrevPhoto();
+      } else {
+        // Swipe left - go to next photo
+        this.emitNextPhoto();
+      }
     }
   }
 }

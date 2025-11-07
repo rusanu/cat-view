@@ -8,7 +8,7 @@
   <div *ngIf="photo" class="photo-display">
 
     <!-- Image -->
-    <div class="image-container">
+    <div class="image-container" (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
       <button class="photo-nav left" (click)="emitPrevPhoto()"><</button>
       <button class="photo-nav right" (click)="emitNextPhoto()">></button>
       <img [src]="photo.url"

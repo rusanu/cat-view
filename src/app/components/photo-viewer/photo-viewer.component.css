@@ -87,6 +87,11 @@
   justify-content: center;
   overflow: auto;
   padding: 1rem;
+  touch-action: pan-y; /* Allow vertical scrolling but enable custom horizontal handling */
+  user-select: none; /* Prevent text selection during swipe */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 
