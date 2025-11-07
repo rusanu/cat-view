@@ -73,3 +73,12 @@
     grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   }
 }
+
+/* Loading spinner */
+.load-more-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  width: 100%;
+}

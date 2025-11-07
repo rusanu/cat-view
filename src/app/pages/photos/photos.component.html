@@ -28,6 +28,7 @@
       <app-photo-list class="photo-list-container"
         [photos]="photos"
         [selectedPhoto]="selectedPhoto"
+        [loadMore$]="loadMore$"
         (photoSelected)="onPhotoSelected($event)"
         (loadMore)="loadMorePhotos()">
       </app-photo-list>

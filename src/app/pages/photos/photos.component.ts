@@ -8,7 +8,7 @@ import { PhotoGraphsComponent } from '../../components/photo-graphs/photo-graphs
 import { DateRangeSelectorComponent, DateRange } from '../../components/date-range-selector/date-range-selector.component';
 import { ActionBarComponent } from '../../components/action-bar/action-bar.component';
 import { ActionConfigService } from '../../services/action-config.service';
-import { Subject, takeUntil } from 'rxjs';
+import { BehaviorSubject, Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-photos',
@@ -51,6 +51,9 @@ export class PhotosComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
+  private loadMoreSubject = new BehaviorSubject<boolean>(false);
+  public loadMore$ = this.loadMoreSubject.asObservable();
+
   constructor(
     private photoService: PhotoService,
     public config: ActionConfigService,
@@ -80,6 +83,10 @@ export class PhotosComponent implements OnInit, OnDestroy {
     this.config.autoRefresh$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(this.setAutoRefresh.bind(this));
+
+    this.loadMoreSubject.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(value => this.loadingMore = value);
   }
 
   ngOnDestroy() {
@@ -134,7 +141,7 @@ export class PhotosComponent implements OnInit, OnDestroy {
     }
 
     try {
-      this.loadingMore = true;
+      this.loadMoreSubject.next(true);
 
       // Load next page
       this.currentPage++;
@@ -149,7 +156,7 @@ export class PhotosComponent implements OnInit, OnDestroy {
       console.error('Error loading more photos:', err);
       // Don't show error to user for pagination failures
     } finally {
-      this.loadingMore = false;
+      this.loadMoreSubject.next(false);
     }
   }
 

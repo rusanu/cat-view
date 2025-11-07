@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ElementRef, 
 import { CommonModule } from '@angular/common';
 import { Photo } from '../../services/photo.service';
 import { ActionConfigService } from '../../services/action-config.service';
-import { Subject, takeUntil, fromEvent, debounceTime } from 'rxjs';
+import { Subject, takeUntil, fromEvent, debounceTime, Observable } from 'rxjs';
 
 @Component({
   selector: 'app-photo-list',
@@ -14,12 +14,15 @@ import { Subject, takeUntil, fromEvent, debounceTime } from 'rxjs';
 export class PhotoListComponent implements OnInit, OnDestroy {
   @Input() photos: Photo[] = [];
   @Input() selectedPhoto: Photo | null = null;
+  @Input() loadMore$: Observable<boolean> | null = null;
   @Output() photoSelected = new EventEmitter<Photo>();
   @Output() loadMore = new EventEmitter<void>();
   @ViewChild('scrollContainer', { static: false }) scrollContainer?: ElementRef;
 
   private destroy$ = new Subject<void>();
   private rotation: number = 0;
+
+  public isLoadingMore = false;
 
   constructor(public config:ActionConfigService) {
     config.rotation$.pipe(
@@ -41,6 +44,11 @@ export class PhotoListComponent implements OnInit, OnDestroy {
           .subscribe(() => this.onScroll());
       }
     });
+    this.loadMore$?.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(value => {
+      this.isLoadingMore = value;}
+    );
   }
 
   ngOnDestroy() {
