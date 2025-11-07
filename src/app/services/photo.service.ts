@@ -22,12 +22,27 @@ export class PhotoService {
   // File pattern: cat_YYYYMMDD_HHMMSS.jpg
   private readonly PHOTO_PATTERN = /cat_(\d{8})_(\d{6})\.jpg$/;
 
-  // Cache for paginated photos
-  private photoCache: Photo[] | null = null;
-  private cacheStartDate: Date | null = null;
-  private cacheEndDate: Date | null = null;
+  // Cache for infinite scroll pagination
+  private photoCache: Photo[] = [];
+  private currentDate: Date; // Current date we're loading from (starts with today UTC, goes backward)
+  private hasMorePhotos = true;
+  private isLoadingMore = false;
 
-  constructor(private s3Service: S3Service) { }
+  private initCurrentDate(): Date {
+    // Start with today in UTC (not local time)
+    const now = new Date();
+    const utcDate = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      23, 59, 59 // End of day to ensure we get all of today's photos
+    ));
+    return utcDate;
+  }
+
+  constructor(private s3Service: S3Service) {
+    this.currentDate = this.initCurrentDate();
+  }
 
   /**
    * Parse filename to extract timestamp
@@ -111,18 +126,23 @@ export class PhotoService {
     for (const prefix of prefixes) {
       let continuationToken: string | undefined = undefined;
       let hasMore = true;
+      let batchCount = 0;
 
       while (hasMore) {
+        batchCount++;
         const response = await this.s3Service.listObjects(prefix, 1000, continuationToken);
 
         if (response.Contents) {
           allObjects.push(...response.Contents);
+          console.log(`Prefix ${prefix}: Batch ${batchCount} - fetched ${response.Contents.length} objects, total so far: ${allObjects.length}`);
         }
 
         if (response.IsTruncated && response.NextContinuationToken) {
           continuationToken = response.NextContinuationToken;
+          console.log(`Prefix ${prefix}: More data available, continuing with token...`);
         } else {
           hasMore = false;
+          console.log(`Prefix ${prefix}: No more data, finished with ${batchCount} batches`);
         }
       }
     }
@@ -244,66 +264,137 @@ export class PhotoService {
   }
 
   /**
-   * Clear the photo cache (call when date range changes)
+   * Clear the photo cache and reset infinite scroll state
    */
   clearCache() {
-    this.photoCache = null;
-    this.cacheStartDate = null;
-    this.cacheEndDate = null;
+    this.photoCache = [];
+    this.currentDate = this.initCurrentDate(); // Reset to today UTC
+    this.hasMorePhotos = true;
+    this.isLoadingMore = false;
   }
 
   /**
-   * Get a page of photos with pagination support
-   * Strategy: S3 cannot list in reverse order, so we fetch all photos for the date range
-   * once and cache them, then paginate client-side. This is efficient for 24h (~240 photos).
-   * @param startDate Start of date range (default: 24 hours ago)
-   * @param endDate End of date range (default: now)
+   * Get a page of photos with infinite scroll support
+   * Strategy:
+   * 1. Load photos day-by-day going backwards from today
+   * 2. Keep cache sorted newest-first
+   * 3. Load more days as needed when scrolling
+   *
    * @param pageSize Number of photos per page (default: 30)
-   * @param continuationToken Client-side pagination token (stringified index)
+   * @param pageIndex Which page to return (0-indexed)
    * @returns PhotoPage with photos and continuation info
    */
   async getPhotosPage(
-    startDate?: Date,
-    endDate?: Date,
     pageSize: number = 30,
-    continuationToken?: string
+    pageIndex: number = 0
   ): Promise<PhotoPage> {
-    // Default to last 24 hours
-    if (!endDate) {
-      endDate = new Date();
-    }
-    if (!startDate) {
-      startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
-    }
-
-    // Check if cache is valid for this date range
-    const cacheValid = this.photoCache &&
-                       this.cacheStartDate?.getTime() === startDate.getTime() &&
-                       this.cacheEndDate?.getTime() === endDate.getTime();
-
-    // Load and cache all photos if cache is invalid
-    if (!cacheValid) {
-      console.log('Loading full photo list for date range (will be cached)');
-      this.photoCache = await this.getPhotos(startDate, endDate);
-      this.cacheStartDate = startDate;
-      this.cacheEndDate = endDate;
-    }
-
-    // Parse client-side continuation token (it's just an index)
-    const startIndex = continuationToken ? parseInt(continuationToken, 10) : 0;
+    const startIndex = pageIndex * pageSize;
     const endIndex = startIndex + pageSize;
 
-    // Return page from cache
-    const photos = this.photoCache!.slice(startIndex, endIndex);
-    const hasMore = endIndex < this.photoCache!.length;
-    const nextToken = hasMore ? endIndex.toString() : undefined;
+    // Load more days if we don't have enough photos cached
+    while (this.photoCache.length < endIndex && this.hasMorePhotos && !this.isLoadingMore) {
+      await this.loadMoreDaysFromS3();
+    }
 
-    console.log(`Returning page: photos ${startIndex}-${endIndex-1} of ${this.photoCache!.length} total`);
+    // Return page from cache
+    const photos = this.photoCache.slice(startIndex, endIndex);
+    const hasMore = endIndex < this.photoCache.length || this.hasMorePhotos;
+
+    console.log(`Returning page ${pageIndex}: photos ${startIndex}-${endIndex-1} of ${this.photoCache.length} cached`);
 
     return {
       photos,
-      continuationToken: nextToken,
+      continuationToken: hasMore ? (pageIndex + 1).toString() : undefined,
       hasMore
     };
+  }
+
+  /**
+   * Load more days worth of photos from S3 into the cache
+   * Loads one day at a time, going backwards, handling month/year boundaries
+   */
+  private async loadMoreDaysFromS3(): Promise<void> {
+    if (this.isLoadingMore || !this.hasMorePhotos) {
+      return;
+    }
+
+    try {
+      this.isLoadingMore = true;
+
+      // Generate prefix for current date
+      const year = this.currentDate.getUTCFullYear();
+      const month = String(this.currentDate.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(this.currentDate.getUTCDate()).padStart(2, '0');
+      const prefix = `cat_${year}${month}${day}_`;
+
+      console.log(`Loading photos for ${year}-${month}-${day} (prefix: ${prefix})`);
+
+      // Fetch all photos for this day (using continuation tokens if needed)
+      const dayObjects: any[] = [];
+      let continuationToken: string | undefined = undefined;
+
+      while (true) {
+        const response = await this.s3Service.listObjects(prefix, 1000, continuationToken);
+
+        if (response.Contents && response.Contents.length > 0) {
+          dayObjects.push(...response.Contents);
+        }
+
+        if (response.IsTruncated && response.NextContinuationToken) {
+          continuationToken = response.NextContinuationToken;
+        } else {
+          break;
+        }
+      }
+
+      // Filter to .jpg files only
+      const photoObjects = dayObjects.filter(obj => {
+        const key = obj.Key || '';
+        const fileName = key.split('/').pop() || '';
+        return this.PHOTO_PATTERN.test(fileName);
+      });
+
+      console.log(`Found ${photoObjects.length} photos for ${year}-${month}-${day}`);
+
+      // Convert to Photo objects with pre-signed URLs
+      const newPhotos: Photo[] = await Promise.all(
+        photoObjects.map(async obj => {
+          const key = obj.Key!;
+          const fileName = key.split('/').pop()!;
+          const timestamp = this.parseFileName(fileName)!;
+          const url = await this.s3Service.getPresignedUrl(key);
+
+          return {
+            key,
+            fileName,
+            timestamp,
+            url,
+            size: obj.Size
+          };
+        })
+      );
+
+      // Append to cache and sort (newest first)
+      this.photoCache.push(...newPhotos);
+      this.photoCache.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+      console.log(`Cache now has ${this.photoCache.length} photos total`);
+
+      // Move to previous day for next load
+      this.currentDate.setUTCDate(this.currentDate.getUTCDate() - 1);
+
+      // Stop if we've gone back too far (e.g., 2 years)
+      const twoYearsAgo = new Date();
+      twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+      if (this.currentDate < twoYearsAgo) {
+        this.hasMorePhotos = false;
+        console.log('Reached 2 years back, stopping');
+      }
+    } catch (error) {
+      console.error('Error loading more days from S3:', error);
+      throw error;
+    } finally {
+      this.isLoadingMore = false;
+    }
   }
 }

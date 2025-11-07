@@ -31,7 +31,7 @@ export class PhotosComponent implements OnInit, OnDestroy {
   autoRefresh = false; // Toggle for auto-refresh
   private refreshInterval: any = null;
   private readonly REFRESH_INTERVAL_MS = 60000; // 1 minute
-  private continuationToken?: string; // Token for pagination
+  private currentPage = 0; // Current page index for infinite scroll
   private hasMorePhotos = true; // Flag to track if more photos available
   private readonly PAGE_SIZE = 30; // Number of photos to load per page
 
@@ -103,18 +103,16 @@ export class PhotosComponent implements OnInit, OnDestroy {
       this.loading = true;
       this.error = null;
       this.photos = [];
-      this.continuationToken = undefined;
+      this.currentPage = 0;
       this.hasMorePhotos = true;
 
+      // Clear cache when reloading (e.g., after date range change or refresh)
+      this.photoService.clearCache();
+
       // Load first page
-      const page = await this.photoService.getPhotosPage(
-        this.startDate,
-        this.endDate,
-        this.PAGE_SIZE
-      );
+      const page = await this.photoService.getPhotosPage(this.PAGE_SIZE, this.currentPage);
 
       this.photos = page.photos;
-      this.continuationToken = page.continuationToken;
       this.hasMorePhotos = page.hasMore;
 
       // Auto-select first photo if available
@@ -138,16 +136,12 @@ export class PhotosComponent implements OnInit, OnDestroy {
     try {
       this.loadingMore = true;
 
-      const page = await this.photoService.getPhotosPage(
-        this.startDate,
-        this.endDate,
-        this.PAGE_SIZE,
-        this.continuationToken
-      );
+      // Load next page
+      this.currentPage++;
+      const page = await this.photoService.getPhotosPage(this.PAGE_SIZE, this.currentPage);
 
       // Append new photos to existing list
       this.photos = [...this.photos, ...page.photos];
-      this.continuationToken = page.continuationToken;
       this.hasMorePhotos = page.hasMore;
 
       console.log(`Loaded ${page.photos.length} more photos. Total: ${this.photos.length}`);
@@ -166,8 +160,8 @@ export class PhotosComponent implements OnInit, OnDestroy {
   async onDateRangeChanged(dateRange: DateRange) {
     this.startDate = dateRange.startDate;
     this.endDate = dateRange.endDate;
-    // Clear cache when date range changes
-    this.photoService.clearCache();
+    // Note: Date range is kept for potential future filtering, but not used in infinite scroll
+    // Clear cache and reload when date range changes
     await this.loadPhotos();
   }
 
