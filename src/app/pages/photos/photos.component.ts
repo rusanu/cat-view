@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { PhotoService, Photo } from '../../services/photo.service';
+import { PhotoService, Photo, PhotoPage } from '../../services/photo.service';
 import { PhotoListComponent } from '../../components/photo-list/photo-list.component';
 import { PhotoViewerComponent } from '../../components/photo-viewer/photo-viewer.component';
 import { PhotoGraphsComponent } from '../../components/photo-graphs/photo-graphs.component';
@@ -22,6 +22,7 @@ export class PhotosComponent implements OnInit, OnDestroy {
   selectedPhoto: Photo | null = null;
   loading = true;
   refreshing = false; // Separate flag for incremental refresh
+  loadingMore = false; // Flag for loading more photos
   error: string | null = null;
   isAuthError = false; // Flag to distinguish auth errors from other errors
   startDate?: Date;
@@ -30,6 +31,9 @@ export class PhotosComponent implements OnInit, OnDestroy {
   autoRefresh = false; // Toggle for auto-refresh
   private refreshInterval: any = null;
   private readonly REFRESH_INTERVAL_MS = 60000; // 1 minute
+  private continuationToken?: string; // Token for pagination
+  private hasMorePhotos = true; // Flag to track if more photos available
+  private readonly PAGE_SIZE = 30; // Number of photos to load per page
 
   // Left/Right panel resizing
   leftPanelWidth = 350; // Default width
@@ -98,7 +102,20 @@ export class PhotosComponent implements OnInit, OnDestroy {
     try {
       this.loading = true;
       this.error = null;
-      this.photos = await this.photoService.getPhotos(this.startDate, this.endDate);
+      this.photos = [];
+      this.continuationToken = undefined;
+      this.hasMorePhotos = true;
+
+      // Load first page
+      const page = await this.photoService.getPhotosPage(
+        this.startDate,
+        this.endDate,
+        this.PAGE_SIZE
+      );
+
+      this.photos = page.photos;
+      this.continuationToken = page.continuationToken;
+      this.hasMorePhotos = page.hasMore;
 
       // Auto-select first photo if available
       if (this.photos.length > 0 && !this.selectedPhoto) {
@@ -112,6 +129,36 @@ export class PhotosComponent implements OnInit, OnDestroy {
     }
   }
 
+  async loadMorePhotos() {
+    // Prevent multiple concurrent loads or loading when there are no more photos
+    if (this.loadingMore || !this.hasMorePhotos) {
+      return;
+    }
+
+    try {
+      this.loadingMore = true;
+
+      const page = await this.photoService.getPhotosPage(
+        this.startDate,
+        this.endDate,
+        this.PAGE_SIZE,
+        this.continuationToken
+      );
+
+      // Append new photos to existing list
+      this.photos = [...this.photos, ...page.photos];
+      this.continuationToken = page.continuationToken;
+      this.hasMorePhotos = page.hasMore;
+
+      console.log(`Loaded ${page.photos.length} more photos. Total: ${this.photos.length}`);
+    } catch (err: any) {
+      console.error('Error loading more photos:', err);
+      // Don't show error to user for pagination failures
+    } finally {
+      this.loadingMore = false;
+    }
+  }
+
   onPhotoSelected(photo: Photo) {
     this.selectedPhoto = photo;
   }
@@ -119,6 +166,8 @@ export class PhotosComponent implements OnInit, OnDestroy {
   async onDateRangeChanged(dateRange: DateRange) {
     this.startDate = dateRange.startDate;
     this.endDate = dateRange.endDate;
+    // Clear cache when date range changes
+    this.photoService.clearCache();
     await this.loadPhotos();
   }
 

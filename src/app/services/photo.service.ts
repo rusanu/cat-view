@@ -9,12 +9,23 @@ export interface Photo {
   size?: number;
 }
 
+export interface PhotoPage {
+  photos: Photo[];
+  continuationToken?: string;
+  hasMore: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class PhotoService {
   // File pattern: cat_YYYYMMDD_HHMMSS.jpg
   private readonly PHOTO_PATTERN = /cat_(\d{8})_(\d{6})\.jpg$/;
+
+  // Cache for paginated photos
+  private photoCache: Photo[] | null = null;
+  private cacheStartDate: Date | null = null;
+  private cacheEndDate: Date | null = null;
 
   constructor(private s3Service: S3Service) { }
 
@@ -213,5 +224,69 @@ export class PhotoService {
    */
   getMetadataKey(photoKey: string): string {
     return photoKey.replace('.jpg', '.json');
+  }
+
+  /**
+   * Clear the photo cache (call when date range changes)
+   */
+  clearCache() {
+    this.photoCache = null;
+    this.cacheStartDate = null;
+    this.cacheEndDate = null;
+  }
+
+  /**
+   * Get a page of photos with pagination support
+   * Strategy: S3 cannot list in reverse order, so we fetch all photos for the date range
+   * once and cache them, then paginate client-side. This is efficient for 24h (~240 photos).
+   * @param startDate Start of date range (default: 24 hours ago)
+   * @param endDate End of date range (default: now)
+   * @param pageSize Number of photos per page (default: 30)
+   * @param continuationToken Client-side pagination token (stringified index)
+   * @returns PhotoPage with photos and continuation info
+   */
+  async getPhotosPage(
+    startDate?: Date,
+    endDate?: Date,
+    pageSize: number = 30,
+    continuationToken?: string
+  ): Promise<PhotoPage> {
+    // Default to last 24 hours
+    if (!endDate) {
+      endDate = new Date();
+    }
+    if (!startDate) {
+      startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
+    }
+
+    // Check if cache is valid for this date range
+    const cacheValid = this.photoCache &&
+                       this.cacheStartDate?.getTime() === startDate.getTime() &&
+                       this.cacheEndDate?.getTime() === endDate.getTime();
+
+    // Load and cache all photos if cache is invalid
+    if (!cacheValid) {
+      console.log('Loading full photo list for date range (will be cached)');
+      this.photoCache = await this.getPhotos(startDate, endDate, 1000);
+      this.cacheStartDate = startDate;
+      this.cacheEndDate = endDate;
+    }
+
+    // Parse client-side continuation token (it's just an index)
+    const startIndex = continuationToken ? parseInt(continuationToken, 10) : 0;
+    const endIndex = startIndex + pageSize;
+
+    // Return page from cache
+    const photos = this.photoCache!.slice(startIndex, endIndex);
+    const hasMore = endIndex < this.photoCache!.length;
+    const nextToken = hasMore ? endIndex.toString() : undefined;
+
+    console.log(`Returning page: photos ${startIndex}-${endIndex-1} of ${this.photoCache!.length} total`);
+
+    return {
+      photos,
+      continuationToken: nextToken,
+      hasMore
+    };
   }
 }

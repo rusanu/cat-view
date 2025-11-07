@@ -1,8 +1,8 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Photo } from '../../services/photo.service';
 import { ActionConfigService } from '../../services/action-config.service';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, fromEvent, debounceTime } from 'rxjs';
 
 @Component({
   selector: 'app-photo-list',
@@ -11,10 +11,12 @@ import { Subject, takeUntil } from 'rxjs';
   templateUrl: './photo-list.component.html',
   styleUrl: './photo-list.component.css'
 })
-export class PhotoListComponent {
+export class PhotoListComponent implements OnInit, OnDestroy {
   @Input() photos: Photo[] = [];
   @Input() selectedPhoto: Photo | null = null;
   @Output() photoSelected = new EventEmitter<Photo>();
+  @Output() loadMore = new EventEmitter<void>();
+  @ViewChild('scrollContainer', { static: false }) scrollContainer?: ElementRef;
 
   private destroy$ = new Subject<void>();
   private rotation: number = 0;
@@ -25,6 +27,38 @@ export class PhotoListComponent {
     ).subscribe(rotation => {
       this.rotation = rotation
     });
+  }
+
+  ngOnInit() {
+    // Set up scroll listener with debounce
+    setTimeout(() => {
+      if (this.scrollContainer) {
+        fromEvent(this.scrollContainer.nativeElement, 'scroll')
+          .pipe(
+            debounceTime(200),
+            takeUntil(this.destroy$)
+          )
+          .subscribe(() => this.onScroll());
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private onScroll() {
+    if (!this.scrollContainer) return;
+
+    const element = this.scrollContainer.nativeElement;
+    const scrollPosition = element.scrollTop + element.clientHeight;
+    const scrollHeight = element.scrollHeight;
+
+    // Load more when user is within 500px of bottom
+    if (scrollHeight - scrollPosition < 500) {
+      this.loadMore.emit();
+    }
   }
 
   getRotationStyle(): string {

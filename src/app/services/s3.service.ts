@@ -52,13 +52,14 @@ export class S3Service {
    * List objects in the S3 bucket with optional prefix filter
    * Automatically prepends the bucket folder to the prefix
    */
-  async listObjects(prefix?: string, maxKeys?: number): Promise<ListObjectsV2CommandOutput> {
+  async listObjects(prefix?: string, maxKeys?: number, continuationToken?: string): Promise<ListObjectsV2CommandOutput> {
     const fullPrefix = prefix ? `${this.bucketFolder}/${prefix}` : this.bucketFolder;
 
     const command = new ListObjectsV2Command({
       Bucket: this.bucketName,
       Prefix: fullPrefix,
-      MaxKeys: maxKeys
+      MaxKeys: maxKeys,
+      ContinuationToken: continuationToken
     });
 
     const client = await this.getS3Client();
