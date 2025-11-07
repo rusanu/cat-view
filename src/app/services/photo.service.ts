@@ -86,14 +86,13 @@ export class PhotoService {
 
   /**
    * Get photos from S3 filtered by date range
+   * Fetches ALL photos in the date range using S3 continuation tokens
    * @param startDate Start of date range (default: 24 hours ago)
    * @param endDate End of date range (default: now)
-   * @param maxPhotos Maximum number of photos to return (default: 1000)
    */
   async getPhotos(
     startDate?: Date,
-    endDate?: Date,
-    maxPhotos: number = 1000
+    endDate?: Date
   ): Promise<Photo[]> {
     // Default to last 24 hours
     if (!endDate) {
@@ -106,11 +105,27 @@ export class PhotoService {
     // Get date-based prefixes (includes +/- 1 day to avoid midnight cutoff)
     const prefixes = this.getDatePrefixes(startDate, endDate);
 
-    // List objects for each prefix in parallel
-    const responses = await this.s3Service.listObjectsWithPrefixes(prefixes, 1000);
+    const allObjects: any[] = [];
 
-    // Combine all results from all prefixes
-    const allObjects = responses.flatMap(response => response.Contents || []);
+    // Fetch ALL objects from each prefix using continuation tokens
+    for (const prefix of prefixes) {
+      let continuationToken: string | undefined = undefined;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await this.s3Service.listObjects(prefix, 1000, continuationToken);
+
+        if (response.Contents) {
+          allObjects.push(...response.Contents);
+        }
+
+        if (response.IsTruncated && response.NextContinuationToken) {
+          continuationToken = response.NextContinuationToken;
+        } else {
+          hasMore = false;
+        }
+      }
+    }
 
     // Filter objects by exact date range and pattern
     const filteredObjects = allObjects.filter(obj => {
@@ -128,6 +143,8 @@ export class PhotoService {
 
       return timestamp >= startDate! && timestamp <= endDate!;
     });
+
+    console.log(`Loaded ${filteredObjects.length} photos from S3 for date range`);
 
     // Generate pre-signed URLs for all photos (in parallel)
     const photos: Photo[] = await Promise.all(
@@ -267,7 +284,7 @@ export class PhotoService {
     // Load and cache all photos if cache is invalid
     if (!cacheValid) {
       console.log('Loading full photo list for date range (will be cached)');
-      this.photoCache = await this.getPhotos(startDate, endDate, 1000);
+      this.photoCache = await this.getPhotos(startDate, endDate);
       this.cacheStartDate = startDate;
       this.cacheEndDate = endDate;
     }
