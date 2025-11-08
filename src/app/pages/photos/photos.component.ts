@@ -22,7 +22,6 @@ export class PhotosComponent implements OnInit, OnDestroy {
   selectedPhoto: Photo | null = null;
   loading = true;
   refreshing = false; // Separate flag for incremental refresh
-  loadingMore = false; // Flag for loading more photos
   error: string | null = null;
   isAuthError = false; // Flag to distinguish auth errors from other errors
   startDate?: Date;
@@ -83,10 +82,6 @@ export class PhotosComponent implements OnInit, OnDestroy {
     this.config.autoRefresh$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(this.setAutoRefresh.bind(this));
-
-    this.loadMoreSubject.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(value => this.loadingMore = value);
   }
 
   ngOnDestroy() {
@@ -136,7 +131,7 @@ export class PhotosComponent implements OnInit, OnDestroy {
 
   async loadMorePhotos() {
     // Prevent multiple concurrent loads or loading when there are no more photos
-    if (this.loadingMore || !this.hasMorePhotos) {
+    if (this.loadMoreSubject.getValue() || !this.hasMorePhotos) {
       return;
     }
 

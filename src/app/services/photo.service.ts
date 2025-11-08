@@ -374,8 +374,19 @@ export class PhotoService {
         })
       );
 
-      // Append to cache and sort (newest first)
+      // Append to cache, deduplicate by key, and sort (newest first)
       this.photoCache.push(...newPhotos);
+
+      // Deduplicate by key (in case of concurrent loads)
+      const seen = new Set<string>();
+      this.photoCache = this.photoCache.filter(photo => {
+        if (seen.has(photo.key)) {
+          return false;
+        }
+        seen.add(photo.key);
+        return true;
+      });
+
       this.photoCache.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
       console.log(`Cache now has ${this.photoCache.length} photos total`);
