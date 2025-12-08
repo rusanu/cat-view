@@ -156,8 +156,11 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
       const deltaX = touch.clientX - this.touchStartX;
       const deltaY = touch.clientY - this.touchStartY;
 
-      this.translateX = this.panStartX + deltaX / this.scale;
-      this.translateY = this.panStartY + deltaY / this.scale;
+      // Rotate deltas to account for image rotation
+      const rotated = this.rotatePanDelta(deltaX, deltaY);
+
+      this.translateX = this.panStartX + rotated.x / this.scale;
+      this.translateY = this.panStartY + rotated.y / this.scale;
       this.clampTranslation();
     } else if (event.touches.length === 2) {
       // Two finger pinch zoom
@@ -225,6 +228,20 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  // Rotate pan deltas to account for image rotation
+  // When image is rotated, screen pan gestures need to be transformed to image space
+  rotatePanDelta(deltaX: number, deltaY: number): { x: number, y: number } {
+    const radians = (this.rotation * Math.PI) / 180;
+    const cos = Math.cos(radians);
+    const sin = Math.sin(radians);
+
+    // Apply inverse rotation to deltas
+    return {
+      x: deltaX * cos + deltaY * sin,
+      y: -deltaX * sin + deltaY * cos
+    };
+  }
+
   onWheel(event: WheelEvent): void {
     event.preventDefault();
 
@@ -255,8 +272,11 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
       const deltaX = event.clientX - this.touchStartX;
       const deltaY = event.clientY - this.touchStartY;
 
-      this.translateX = this.panStartX + deltaX / this.scale;
-      this.translateY = this.panStartY + deltaY / this.scale;
+      // Rotate deltas to account for image rotation
+      const rotated = this.rotatePanDelta(deltaX, deltaY);
+
+      this.translateX = this.panStartX + rotated.x / this.scale;
+      this.translateY = this.panStartY + rotated.y / this.scale;
       this.clampTranslation();
       event.preventDefault();
     }
