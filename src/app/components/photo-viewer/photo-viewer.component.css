@@ -85,13 +85,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: auto;
+  overflow: hidden; /* Changed from auto to hidden for zoom */
   padding: 1rem;
-  touch-action: pan-y; /* Allow vertical scrolling but enable custom horizontal handling */
+  touch-action: none; /* Let us handle all touch gestures */
   user-select: none; /* Prevent text selection during swipe */
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
+  cursor: grab; /* Show draggable cursor */
 }
 
 
@@ -117,7 +118,9 @@
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  transition: transform 0.3s ease;
+  transform-origin: center center;
+  will-change: transform; /* Optimize for transform animations */
+  pointer-events: none; /* Let container handle events */
 }
 
 /* Responsive adjustments */
@@ -141,6 +144,7 @@
   .image-container {
     padding: 0.25rem;
     overflow: hidden;
+    cursor: default; /* Don't show grab cursor on mobile */
   }
 
   .image-container .photo-nav {

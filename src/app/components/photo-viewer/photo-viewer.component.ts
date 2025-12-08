@@ -20,10 +20,26 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
   metadata: PhotoMetadata | null = null;
   metadataLoading = false;
 
+  // Zoom and pan state
+  scale: number = 1;
+  minScale: number = 1;
+  maxScale: number = 5;
+  translateX: number = 0;
+  translateY: number = 0;
+
   private destroy$ = new Subject<void>();
   private touchStartX: number = 0;
   private touchStartY: number = 0;
   private readonly swipeThreshold = 50; // Minimum pixels to trigger swipe
+
+  // Zoom gesture tracking
+  private lastTouchDistance: number = 0;
+  private isPanning: boolean = false;
+  private panStartX: number = 0;
+  private panStartY: number = 0;
+  private lastTapTime: number = 0;
+  private readonly doubleTapThreshold = 300; // ms
+  private readonly zoomStep: number = 2.5; // Double-tap zoom level
 
   constructor(private metadataService: MetadataService, public config:ActionConfigService) {
     config.rotation$.pipe(
@@ -46,6 +62,8 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
 
   async ngOnChanges(changes: SimpleChanges) {
     if (changes['photo'] && this.photo) {
+      // Reset zoom when photo changes
+      this.resetZoom();
       await this.loadMetadata();
     }
   }
@@ -67,8 +85,12 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
     }
   }
 
-  getRotationStyle(): string {
-    return `rotate(${this.rotation}deg)`;
+  getTransformStyle(): string {
+    // Order matters: rotate -> scale -> translate
+    // 1. Rotate first (user's orientation preference)
+    // 2. Scale (zoom level)
+    // 3. Translate last (pan position in screen space)
+    return `rotate(${this.rotation}deg) scale(${this.scale}) translate(${this.translateX}px, ${this.translateY}px)`;
   }
 
   getBrightnessFilter(level: number | null): string {
@@ -106,26 +128,167 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
   }
 
   onTouchStart(event: TouchEvent): void {
-    this.touchStartX = event.touches[0].clientX;
-    this.touchStartY = event.touches[0].clientY;
+    if (event.touches.length === 1) {
+      // Single finger touch
+      this.touchStartX = event.touches[0].clientX;
+      this.touchStartY = event.touches[0].clientY;
+
+      if (this.scale > 1) {
+        // Start panning when zoomed
+        this.isPanning = true;
+        this.panStartX = this.translateX;
+        this.panStartY = this.translateY;
+      }
+    } else if (event.touches.length === 2) {
+      // Two finger touch - prepare for pinch zoom
+      event.preventDefault();
+      const touch1 = event.touches[0];
+      const touch2 = event.touches[1];
+      this.lastTouchDistance = this.getTouchDistance(touch1, touch2);
+    }
+  }
+
+  onTouchMove(event: TouchEvent): void {
+    if (event.touches.length === 1 && this.isPanning && this.scale > 1) {
+      // Single finger pan when zoomed
+      event.preventDefault();
+      const touch = event.touches[0];
+      const deltaX = touch.clientX - this.touchStartX;
+      const deltaY = touch.clientY - this.touchStartY;
+
+      this.translateX = this.panStartX + deltaX / this.scale;
+      this.translateY = this.panStartY + deltaY / this.scale;
+      this.clampTranslation();
+    } else if (event.touches.length === 2) {
+      // Two finger pinch zoom
+      event.preventDefault();
+      const touch1 = event.touches[0];
+      const touch2 = event.touches[1];
+      const currentDistance = this.getTouchDistance(touch1, touch2);
+
+      if (this.lastTouchDistance > 0) {
+        const scaleChange = currentDistance / this.lastTouchDistance;
+        this.scale = Math.min(Math.max(this.scale * scaleChange, this.minScale), this.maxScale);
+
+        // Reset translation if zoomed back to min
+        if (this.scale === this.minScale) {
+          this.translateX = 0;
+          this.translateY = 0;
+        } else {
+          this.clampTranslation();
+        }
+      }
+
+      this.lastTouchDistance = currentDistance;
+    }
   }
 
   onTouchEnd(event: TouchEvent): void {
-    const touchEndX = event.changedTouches[0].clientX;
-    const touchEndY = event.changedTouches[0].clientY;
+    if (event.touches.length === 0) {
+      // All fingers lifted
+      if (this.isPanning) {
+        // End panning
+        this.isPanning = false;
+      } else if (this.scale === 1) {
+        // Check for swipe navigation (only when not zoomed)
+        const touchEndX = event.changedTouches[0].clientX;
+        const touchEndY = event.changedTouches[0].clientY;
+        const deltaX = touchEndX - this.touchStartX;
+        const deltaY = touchEndY - this.touchStartY;
 
-    const deltaX = touchEndX - this.touchStartX;
-    const deltaY = touchEndY - this.touchStartY;
+        // Check for double-tap
+        const now = Date.now();
+        if (now - this.lastTapTime < this.doubleTapThreshold && Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10) {
+          this.toggleZoom();
+          this.lastTapTime = 0; // Reset to prevent triple-tap
+          return;
+        }
+        this.lastTapTime = now;
 
-    // Only trigger swipe if horizontal movement is greater than vertical (to avoid interfering with scrolling)
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > this.swipeThreshold) {
-      if (deltaX > 0) {
-        // Swipe right - go to previous photo
-        this.emitPrevPhoto();
-      } else {
-        // Swipe left - go to next photo
-        this.emitNextPhoto();
+        // Only trigger swipe if horizontal movement is greater than vertical
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > this.swipeThreshold) {
+          if (deltaX > 0) {
+            this.emitPrevPhoto();
+          } else {
+            this.emitNextPhoto();
+          }
+        }
       }
+
+      this.lastTouchDistance = 0;
     }
+  }
+
+  getTouchDistance(touch1: Touch, touch2: Touch): number {
+    const dx = touch2.clientX - touch1.clientX;
+    const dy = touch2.clientY - touch1.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  onWheel(event: WheelEvent): void {
+    event.preventDefault();
+
+    const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
+    this.scale = Math.min(Math.max(this.scale * zoomFactor, this.minScale), this.maxScale);
+
+    if (this.scale === this.minScale) {
+      this.translateX = 0;
+      this.translateY = 0;
+    } else {
+      this.clampTranslation();
+    }
+  }
+
+  onMouseDown(event: MouseEvent): void {
+    if (this.scale > 1) {
+      this.isPanning = true;
+      this.touchStartX = event.clientX;
+      this.touchStartY = event.clientY;
+      this.panStartX = this.translateX;
+      this.panStartY = this.translateY;
+      event.preventDefault();
+    }
+  }
+
+  onMouseMove(event: MouseEvent): void {
+    if (this.isPanning && this.scale > 1) {
+      const deltaX = event.clientX - this.touchStartX;
+      const deltaY = event.clientY - this.touchStartY;
+
+      this.translateX = this.panStartX + deltaX / this.scale;
+      this.translateY = this.panStartY + deltaY / this.scale;
+      this.clampTranslation();
+      event.preventDefault();
+    }
+  }
+
+  onMouseUp(): void {
+    this.isPanning = false;
+  }
+
+  onDoubleClick(): void {
+    this.toggleZoom();
+  }
+
+  toggleZoom(): void {
+    if (this.scale === 1) {
+      this.scale = this.zoomStep;
+    } else {
+      this.resetZoom();
+    }
+  }
+
+  resetZoom(): void {
+    this.scale = 1;
+    this.translateX = 0;
+    this.translateY = 0;
+  }
+
+  clampTranslation(): void {
+    // Limit panning to prevent image from going too far off-screen
+    // Allow some overflow but not complete disappearance
+    const maxTranslate = 100; // pixels
+    this.translateX = Math.min(Math.max(this.translateX, -maxTranslate), maxTranslate);
+    this.translateY = Math.min(Math.max(this.translateY, -maxTranslate), maxTranslate);
   }
 }
