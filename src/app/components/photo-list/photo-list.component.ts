@@ -59,6 +59,9 @@ export class PhotoListComponent implements OnInit, OnDestroy {
   private onScroll() {
     if (!this.scrollContainer) return;
 
+    // Don't trigger load more if already loading
+    if (this.isLoadingMore) return;
+
     const element = this.scrollContainer.nativeElement;
     const scrollPosition = element.scrollTop + element.clientHeight;
     const scrollHeight = element.scrollHeight;
