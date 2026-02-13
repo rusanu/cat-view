@@ -69,7 +69,7 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
   }
 
   async loadMetadata() {
-    if (!this.photo) {
+    if (!this.photo || this.photo.key === 'live-photo') {
       this.metadata = null;
       return;
     }

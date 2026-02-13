@@ -1,5 +1,23 @@
 <div class="photo-grid-scroll" #scrollContainer>
   <div class="photo-grid">
+    <!-- Live Photo Card - always first -->
+    <div class="photo-item"
+         [class.selected]="isLiveActive"
+         (click)="onLiveCardClick()">
+      <img *ngIf="livePhotoUrl"
+           [src]="livePhotoUrl"
+           alt="Live photo"
+           class="thumbnail loaded"
+           [style.transform]="getRotationStyle()"
+           [style.filter]="getBrightnessFilter(config.brightnessLevel$ | async)">
+      <div *ngIf="!livePhotoUrl" class="live-placeholder"></div>
+      <div class="photo-time-overlay">
+        <span *ngIf="!isLiveConnecting">LIVE</span>
+        <span *ngIf="isLiveConnecting" class="spinner-border spinner-border-sm text-light" role="status"></span>
+      </div>
+    </div>
+
+    <!-- Regular photo items -->
     <div class="photo-item"
          *ngFor="let photo of photos; trackBy: trackByKey"
          [class.selected]="isSelected(photo)"

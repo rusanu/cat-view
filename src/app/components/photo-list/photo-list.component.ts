@@ -15,7 +15,11 @@ export class PhotoListComponent implements OnInit, OnDestroy {
   @Input() photos: Photo[] = [];
   @Input() selectedPhoto: Photo | null = null;
   @Input() loadMore$: Observable<boolean> | null = null;
+  @Input() isLiveActive = false;
+  @Input() livePhotoUrl: string | null = null;
+  @Input() isLiveConnecting = false;
   @Output() photoSelected = new EventEmitter<Photo>();
+  @Output() livePhotoClicked = new EventEmitter<void>();
   @Output() loadMore = new EventEmitter<void>();
   @ViewChild('scrollContainer', { static: false }) scrollContainer?: ElementRef;
 
@@ -85,6 +89,10 @@ export class PhotoListComponent implements OnInit, OnDestroy {
 
   onPhotoClick(photo: Photo) {
     this.photoSelected.emit(photo);
+  }
+
+  onLiveCardClick() {
+    this.livePhotoClicked.emit();
   }
 
   isSelected(photo: Photo): boolean {

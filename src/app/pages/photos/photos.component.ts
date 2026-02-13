@@ -8,6 +8,7 @@ import { PhotoGraphsComponent } from '../../components/photo-graphs/photo-graphs
 import { DateRangeSelectorComponent, DateRange } from '../../components/date-range-selector/date-range-selector.component';
 import { ActionBarComponent } from '../../components/action-bar/action-bar.component';
 import { ActionConfigService } from '../../services/action-config.service';
+import { LivePhotoService } from '../../services/live-photo.service';
 import { BehaviorSubject, Subject, takeUntil } from 'rxjs';
 
 @Component({
@@ -24,6 +25,12 @@ export class PhotosComponent implements OnInit, OnDestroy {
   refreshing = false; // Separate flag for incremental refresh
   error: string | null = null;
   isAuthError = false; // Flag to distinguish auth errors from other errors
+
+  // Live photo state
+  isLiveActive = false;
+  isLiveConnecting = false;
+  livePhotoUrl: string | null = null;
+  livePhoto: Photo | null = null;
   startDate?: Date;
   endDate?: Date;
   showGraphs = false; // Toggle for showing graphs
@@ -55,6 +62,7 @@ export class PhotosComponent implements OnInit, OnDestroy {
 
   constructor(
     private photoService: PhotoService,
+    private livePhotoService: LivePhotoService,
     public config: ActionConfigService,
     private router: Router
   ) {
@@ -82,9 +90,37 @@ export class PhotosComponent implements OnInit, OnDestroy {
     this.config.autoRefresh$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(this.setAutoRefresh.bind(this));
+
+    // Live photo subscriptions
+    this.livePhotoService.isLiveActive$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(active => this.isLiveActive = active);
+
+    this.livePhotoService.isLiveConnecting$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(connecting => this.isLiveConnecting = connecting);
+
+    this.livePhotoService.livePhotoUrl$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(url => {
+      this.livePhotoUrl = url;
+      // Mutate the persistent livePhoto object's url to avoid triggering viewer's ngOnChanges
+      if (this.livePhoto && url) {
+        this.livePhoto.url = url;
+      }
+    });
+
+    this.livePhotoService.liveError$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(err => {
+      if (err) this.error = err;
+    });
   }
 
   ngOnDestroy() {
+    // Stop live photo if active
+    this.livePhotoService.stopLivePhoto();
+
     // Clean up event listeners
     document.removeEventListener('mousemove', this.onMouseMove);
     document.removeEventListener('mouseup', this.onMouseUp);
@@ -156,7 +192,31 @@ export class PhotosComponent implements OnInit, OnDestroy {
   }
 
   onPhotoSelected(photo: Photo) {
+    if (this.isLiveActive) {
+      this.livePhotoService.stopLivePhoto();
+      this.livePhoto = null;
+    }
     this.selectedPhoto = photo;
+  }
+
+  async onLivePhotoClicked() {
+    // Create a persistent Photo object on first activation (mutated in place for URL updates)
+    if (!this.livePhoto) {
+      this.livePhoto = {
+        key: 'live-photo',
+        fileName: 'Live Photo',
+        timestamp: new Date(),
+        url: ''
+      };
+    }
+    this.selectedPhoto = null;
+
+    try {
+      // Command is idempotent - safe to re-send every time
+      await this.livePhotoService.startLivePhoto();
+    } catch (err: any) {
+      this.error = err.message || 'Failed to start live photo';
+    }
   }
 
   async onDateRangeChanged(dateRange: DateRange) {

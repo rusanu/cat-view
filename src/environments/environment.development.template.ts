@@ -13,5 +13,9 @@ export const environment = {
   },
   cognito: {
     identityPoolId: 'your-identity-pool-id',
+  },
+  iot: {
+    endpoint: 'your-iot-endpoint',
+    cameraId: 'your-camera-id',
   }
 };

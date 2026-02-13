@@ -29,7 +29,11 @@
         [photos]="photos"
         [selectedPhoto]="selectedPhoto"
         [loadMore$]="loadMore$"
+        [isLiveActive]="isLiveActive"
+        [livePhotoUrl]="livePhotoUrl"
+        [isLiveConnecting]="isLiveConnecting"
         (photoSelected)="onPhotoSelected($event)"
+        (livePhotoClicked)="onLivePhotoClicked()"
         (loadMore)="loadMorePhotos()">
       </app-photo-list>
     </div>
@@ -48,7 +52,7 @@
              [style.height.%]="showGraphs ? photoSectionHeight : 100">
           <app-photo-viewer
             [style.height.%]="100"
-            [photo]="selectedPhoto"
+            [photo]="isLiveActive ? livePhoto : selectedPhoto"
             (nextPhoto)="nextPhoto()"
             (prevPhoto)="previousPhoto()">
           </app-photo-viewer>
