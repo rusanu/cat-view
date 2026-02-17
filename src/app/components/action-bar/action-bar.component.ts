@@ -4,6 +4,8 @@ import { AsyncPipe, NgIf } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { ActionConfigService } from '../../services/action-config.service';
 import { ToggleButtonComponent } from '../toggle-button/toggle-button.component';
+import { IoTService } from '../../services/iot.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-action-bar',
@@ -14,6 +16,8 @@ import { ToggleButtonComponent } from '../toggle-button/toggle-button.component'
 })
 export class ActionBarComponent {
   @Output() refresh = new EventEmitter<void>();
+
+  snapshotSending = false;
 
   public get isAuthenticated$() {
     return this.authService.isAuthenticated$;
@@ -26,7 +30,8 @@ export class ActionBarComponent {
   constructor(
     public userProfile:UserProfileService,
     public config: ActionConfigService,
-    private authService: AuthService) {
+    private authService: AuthService,
+    private iotService: IoTService) {
   }
 
   public logout() {
@@ -57,6 +62,20 @@ export class ActionBarComponent {
     const input = event.target as HTMLInputElement;
     const level = parseInt(input.value, 10);
     this.config.brightnessLevel$.next(level);
+  }
+
+  async sendSnapshot() {
+    if (this.snapshotSending) return;
+    this.snapshotSending = true;
+    try {
+      await this.iotService.connect();
+      const commandTopic = `cat-shelter/${environment.iot.cameraId}/commands`;
+      await this.iotService.publish(commandTopic, { command: 'snapshot' });
+    } catch (err) {
+      console.error('Failed to send snapshot command:', err);
+    } finally {
+      this.snapshotSending = false;
+    }
   }
 }
 
