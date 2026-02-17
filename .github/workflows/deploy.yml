@@ -38,6 +38,8 @@ jobs:
           echo "AWS_BUCKET_FOLDER=${{ secrets.AWS_BUCKET_FOLDER }}" >> .env
           echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
           echo "COGNITO_IDENTITY_POOL_ID=${{ secrets.COGNITO_IDENTITY_POOL_ID }}" >> .env
+          echo "IOT_ENDPOINT=${{ secrets.IOT_ENDPOINT }}" >> .env
+          echo "IOT_CAMERA_ID=${{ secrets.IOT_CAMERA_ID }}" >> .env
 
       - name: Build for GitHub Pages (subdirectory)
         run: npm run build -- --base-href /cat-view/
