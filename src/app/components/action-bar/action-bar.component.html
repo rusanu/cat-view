@@ -56,11 +56,12 @@
                  title="Ajustează luminozitatea (1=normal, 5=foarte luminos pentru poze întunecate)">
           <span class="brightness-value">{{ config.brightnessLevel$ | async }}</span>
         </div>
-
+<!--
         <button class="btn btn-sm btn-info" (click)="sendSnapshot()" [disabled]="snapshotSending" title="Trimite comandă snapshot">
           <span *ngIf="!snapshotSending">📸 Snapshot</span>
           <span *ngIf="snapshotSending">⏳ Se trimite...</span>
         </button>
+      -->
         <button *ngIf="(this.config.showGrid$ | async)" class="btn btn-sm btn-secondary" (click)="emitRefresh()"><span>⟲ Reîmprospătează</span></button>
       </div>
       <ul class="navbar-nav ms-auto" *ngIf="(isAuthenticated$ | async)">
