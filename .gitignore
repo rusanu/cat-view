@@ -38,6 +38,7 @@ testem.log
 /typings
 .claude/settings.local.json
 .playwright-mcp/
+.mcp.json
 
 # System files
 .DS_Store

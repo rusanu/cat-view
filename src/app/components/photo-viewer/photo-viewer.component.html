@@ -21,9 +21,8 @@
       <button class="photo-nav left" (click)="emitPrevPhoto()"><</button>
       <button class="photo-nav right" (click)="emitNextPhoto()">></button>
       <img [src]="photo.url"
-           class="full-image"
-           [alt]="photo.fileName"
            class="main-photo"
+           [alt]="photo.fileName"
            [style.transform]="getTransformStyle()"
            [style.filter]="getBrightnessFilter(config.brightnessLevel$ | async)">
     </div>

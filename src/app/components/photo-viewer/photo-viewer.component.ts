@@ -22,7 +22,7 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
 
   // Zoom and pan state
   scale: number = 1;
-  minScale: number = 1;
+  minScale: number = 0.5;
   maxScale: number = 5;
   translateX: number = 0;
   translateY: number = 0;
