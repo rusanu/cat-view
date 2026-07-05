@@ -20,6 +20,14 @@
          (dblclick)="onDoubleClick()">
       <button class="photo-nav left" (click)="emitPrevPhoto()"><</button>
       <button class="photo-nav right" (click)="emitNextPhoto()">></button>
+      <button class="photo-favourite-btn"
+              [class.is-favourite]="isFavourite()"
+              [class.is-favouring]="isFavouring()"
+              (click)="onFavouriteClick()"
+              title="Favourite">
+        <span *ngIf="!isFavouring()">{{ isFavourite() ? '♥' : '♡' }}</span>
+        <span *ngIf="isFavouring()" class="spinner-border spinner-border-sm text-light" role="status"></span>
+      </button>
       <img [src]="photo.url"
            class="main-photo"
            [alt]="photo.fileName"

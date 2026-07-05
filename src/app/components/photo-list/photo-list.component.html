@@ -35,6 +35,14 @@
       <div class="photo-time-overlay">
         {{ formatTime(photo.timestamp) }}
       </div>
+      <div class="photo-favourite-overlay"
+           [class.is-favourite]="isFavourite(photo)"
+           [class.is-favouring]="isFavouring(photo)"
+           (click)="onFavouriteClick($event, photo)"
+           title="Favourite">
+        <span *ngIf="!isFavouring(photo)">{{ isFavourite(photo) ? '♥' : '♡' }}</span>
+        <span *ngIf="isFavouring(photo)" class="spinner-border spinner-border-sm text-light" role="status"></span>
+      </div>
     </div>
   </div>
   <div class="load-more-spinner" *ngIf="isLoadingMore">

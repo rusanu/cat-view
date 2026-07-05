@@ -1,8 +1,9 @@
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Photo } from '../../services/photo.service';
+import { Photo, PhotoService } from '../../services/photo.service';
 import { MetadataService, PhotoMetadata } from '../../services/metadata.service';
 import { ActionConfigService } from '../../services/action-config.service';
+import { FavouritesService } from '../../services/favourites.service';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
@@ -19,6 +20,8 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
   rotation: number = 0; // Rotation in degrees (0, 90, 180, 270, -90, -180, -270)
   metadata: PhotoMetadata | null = null;
   metadataLoading = false;
+  private favouriteFileNames: Set<string> = new Set();
+  public favouritingInProgress = new Set<string>();
 
   // Zoom and pan state
   scale: number = 1;
@@ -41,10 +44,22 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
   private readonly doubleTapThreshold = 300; // ms
   private readonly zoomStep: number = 2.5; // Double-tap zoom level
 
-  constructor(private metadataService: MetadataService, public config:ActionConfigService) {
+  constructor(
+    private metadataService: MetadataService,
+    public config: ActionConfigService,
+    public favouritesService: FavouritesService,
+    private photoService: PhotoService
+  ) {
     config.rotation$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(rotation => this.rotation = rotation);
+
+    // Subscribe to favourites changes
+    favouritesService.favouriteKeys$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(keys => {
+      this.favouriteFileNames = keys;
+    });
   }
 
   ngOnDestroy(): void {
@@ -310,5 +325,27 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
     const maxTranslate = 100; // pixels
     this.translateX = Math.min(Math.max(this.translateX, -maxTranslate), maxTranslate);
     this.translateY = Math.min(Math.max(this.translateY, -maxTranslate), maxTranslate);
+  }
+
+  isFavourite(): boolean {
+    return this.photo ? this.favouritesService.isFavourite(this.photo.fileName) : false;
+  }
+
+  isFavouring(): boolean {
+    return this.photo ? this.favouritingInProgress.has(this.photo.fileName) : false;
+  }
+
+  async onFavouriteClick(): Promise<void> {
+    if (!this.photo || this.isFavourite() || this.isFavouring()) return;
+
+    this.favouritingInProgress.add(this.photo.fileName);
+    try {
+      const metadataKey = this.photoService.getMetadataKey(this.photo.key);
+      await this.favouritesService.addFavourite(this.photo, metadataKey);
+    } catch (error) {
+      console.error('Failed to favourite photo:', this.photo.fileName, error);
+    } finally {
+      this.favouritingInProgress.delete(this.photo.fileName);
+    }
   }
 }

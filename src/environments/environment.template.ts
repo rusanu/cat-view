@@ -7,6 +7,7 @@ export const environment = {
     region: 'your-aws-region',
     bucketName: 'your-bucket-name',
     bucketFolder: 'your-folder-name',
+    favouritesFolder: 'your-favourites-folder-name',
   },
   google: {
     clientId: 'your-google-client-id',

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { S3Client, ListObjectsV2Command, GetObjectCommand, ListObjectsV2CommandOutput } from '@aws-sdk/client-s3';
+import { S3Client, ListObjectsV2Command, GetObjectCommand, PutObjectCommand, ListObjectsV2CommandOutput } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { environment } from '../../environments/environment.development';
 import { CognitoAuthService } from './cognito-auth.service';
@@ -50,10 +50,11 @@ export class S3Service {
 
   /**
    * List objects in the S3 bucket with optional prefix filter
-   * Automatically prepends the bucket folder to the prefix
+   * Automatically prepends the bucket folder to the prefix, or a custom folder if specified
    */
-  async listObjects(prefix?: string, maxKeys?: number, continuationToken?: string): Promise<ListObjectsV2CommandOutput> {
-    const fullPrefix = prefix ? `${this.bucketFolder}/${prefix}` : this.bucketFolder;
+  async listObjects(prefix?: string, maxKeys?: number, continuationToken?: string, folder?: string): Promise<ListObjectsV2CommandOutput> {
+    const baseFolder = folder ?? this.bucketFolder;
+    const fullPrefix = prefix ? `${baseFolder}/${prefix}` : baseFolder;
 
     const command = new ListObjectsV2Command({
       Bucket: this.bucketName,
@@ -121,5 +122,20 @@ export class S3Service {
     const client = await this.getS3Client();
     const response = await client.send(command);
     return response;
+  }
+
+  /**
+   * Get a pre-signed URL for uploading (PUT) an object directly from the browser
+   * Used for copying favourited photos to a separate folder
+   */
+  async getPresignedUploadUrl(key: string, contentType: string): Promise<string> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      ContentType: contentType
+    });
+
+    const client = await this.getS3Client();
+    return await getSignedUrl(client, command, { expiresIn: 300 }); // 5 minutes, used immediately
   }
 }

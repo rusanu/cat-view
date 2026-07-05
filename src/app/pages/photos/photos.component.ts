@@ -9,6 +9,7 @@ import { DateRangeSelectorComponent, DateRange } from '../../components/date-ran
 import { ActionBarComponent } from '../../components/action-bar/action-bar.component';
 import { ActionConfigService } from '../../services/action-config.service';
 import { LivePhotoService } from '../../services/live-photo.service';
+import { FavouritesService } from '../../services/favourites.service';
 import { BehaviorSubject, Subject, takeUntil } from 'rxjs';
 
 @Component({
@@ -64,7 +65,8 @@ export class PhotosComponent implements OnInit, OnDestroy {
     private photoService: PhotoService,
     private livePhotoService: LivePhotoService,
     public config: ActionConfigService,
-    private router: Router
+    private router: Router,
+    private favouritesService: FavouritesService
   ) {
     // Load saved panel width from localStorage
     const savedWidth = localStorage.getItem(this.PANEL_WIDTH_KEY);
@@ -81,6 +83,9 @@ export class PhotosComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     await this.loadPhotos();
+    // Load favourites in parallel (fire-and-forget)
+    this.favouritesService.loadFavouriteKeys();
+
     // Add global mouse event listeners
     document.addEventListener('mousemove', this.onMouseMove);
     document.addEventListener('mouseup', this.onMouseUp);
@@ -90,6 +95,17 @@ export class PhotosComponent implements OnInit, OnDestroy {
     this.config.autoRefresh$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(this.setAutoRefresh.bind(this));
+
+    // Subscribe to showFavourites toggle to switch view modes
+    this.config.showFavourites$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(showFavourites => {
+      if (showFavourites) {
+        this.loadFavouritePhotos();
+      } else {
+        this.loadPhotos();
+      }
+    });
 
     // Live photo subscriptions
     this.livePhotoService.isLiveActive$.pipe(
@@ -231,7 +247,34 @@ export class PhotosComponent implements OnInit, OnDestroy {
     this.showGraphs = !this.showGraphs;
   }
 
+  async loadFavouritePhotos() {
+    try {
+      this.loading = true;
+      this.error = null;
+      this.selectedPhoto = null;
+
+      // Fetch all favourited photos
+      this.photos = await this.favouritesService.getFavouritePhotos();
+      this.hasMorePhotos = false; // No infinite scroll for favourites
+
+      // Auto-select first photo if available
+      if (this.photos.length > 0) {
+        this.selectedPhoto = this.photos[0];
+      }
+    } catch (err: any) {
+      this.error = err.message || 'Failed to load favourite photos';
+      console.error('Error loading favourite photos:', err);
+    } finally {
+      this.loading = false;
+    }
+  }
+
   async refreshPhotos() {
+    // Skip refresh if browsing favourites (getNewPhotosSince operates on main bucket)
+    if (this.config.showFavourites$.getValue()) {
+      return;
+    }
+
     // If we have photos already, only fetch new ones
     if (this.photos.length > 0) {
       try {

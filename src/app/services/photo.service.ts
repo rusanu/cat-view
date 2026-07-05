@@ -49,7 +49,7 @@ export class PhotoService {
    * Example: cat_20251030_032811.jpg -> Date object
    * IMPORTANT: Filenames are in UTC, so we parse as UTC
    */
-  private parseFileName(fileName: string): Date | null {
+  parseFileName(fileName: string): Date | null {
     const match = fileName.match(this.PHOTO_PATTERN);
     if (!match) return null;
 

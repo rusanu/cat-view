@@ -1,7 +1,8 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Photo } from '../../services/photo.service';
+import { Photo, PhotoService } from '../../services/photo.service';
 import { ActionConfigService } from '../../services/action-config.service';
+import { FavouritesService } from '../../services/favourites.service';
 import { Subject, takeUntil, fromEvent, debounceTime, Observable } from 'rxjs';
 
 @Component({
@@ -25,14 +26,27 @@ export class PhotoListComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
   private rotation: number = 0;
+  private favouriteFileNames: Set<string> = new Set();
+  public favoritingInProgress = new Set<string>();
 
   public isLoadingMore = false;
 
-  constructor(public config:ActionConfigService) {
+  constructor(
+    public config: ActionConfigService,
+    public favouritesService: FavouritesService,
+    private photoService: PhotoService
+  ) {
     config.rotation$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(rotation => {
       this.rotation = rotation
+    });
+
+    // Subscribe to favourites changes
+    favouritesService.favouriteKeys$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(keys => {
+      this.favouriteFileNames = keys;
     });
   }
 
@@ -129,5 +143,30 @@ export class PhotoListComponent implements OnInit, OnDestroy {
     // Set a placeholder or show error
     img.style.backgroundColor = '#f8f9fa';
     img.alt = 'Failed to load';
+  }
+
+  isFavourite(photo: Photo): boolean {
+    return this.favouritesService.isFavourite(photo.fileName);
+  }
+
+  isFavouring(photo: Photo): boolean {
+    return this.favoritingInProgress.has(photo.fileName);
+  }
+
+  async onFavouriteClick(event: Event, photo: Photo) {
+    event.stopPropagation();
+
+    // No-op if already favourited or in-flight
+    if (this.isFavourite(photo) || this.isFavouring(photo)) return;
+
+    this.favoritingInProgress.add(photo.fileName);
+    try {
+      const metadataKey = this.photoService.getMetadataKey(photo.key);
+      await this.favouritesService.addFavourite(photo, metadataKey);
+    } catch (error) {
+      console.error('Failed to favourite photo:', photo.fileName, error);
+    } finally {
+      this.favoritingInProgress.delete(photo.fileName);
+    }
   }
 }

@@ -61,6 +61,36 @@
   background: rgba(0, 123, 255, 0.9);
 }
 
+.photo-favourite-overlay {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #ccc;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color 0.2s, transform 0.15s;
+}
+
+.photo-favourite-overlay:hover {
+  transform: scale(1.15);
+}
+
+.photo-favourite-overlay.is-favourite {
+  color: #ffd700;
+}
+
+.photo-favourite-overlay.is-favouring {
+  cursor: default;
+  pointer-events: none;
+}
+
 /* Responsive grid */
 @media (max-width: 768px) {
   .photo-grid {
