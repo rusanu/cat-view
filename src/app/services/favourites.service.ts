@@ -111,13 +111,16 @@ export class FavouritesService {
     let continuationToken: string | undefined;
 
     try {
+      console.log('getFavouritePhotos: Starting load from folder:', this.favouritesFolder);
       do {
+        console.log('getFavouritePhotos: Fetching page, token:', continuationToken);
         const response = await this.s3Service.listObjects(
           undefined,
           1000,
           continuationToken,
           this.favouritesFolder
         );
+        console.log('getFavouritePhotos: S3 response Contents count:', response.Contents?.length);
 
         // Filter by photo pattern and build Photo objects
         const filteredObjects = (response.Contents ?? []).filter(obj => {
@@ -152,6 +155,7 @@ export class FavouritesService {
       // Sort by timestamp (newest first)
       photos.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
+      console.log('getFavouritePhotos: Loaded', photos.length, 'favourited photos');
       return photos;
     } catch (error) {
       console.error('Failed to get favourite photos:', error);

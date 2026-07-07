@@ -249,6 +249,7 @@ export class PhotosComponent implements OnInit, OnDestroy {
 
   async loadFavouritePhotos() {
     try {
+      console.log('loadFavouritePhotos: Starting');
       this.loading = true;
       this.error = null;
       this.selectedPhoto = null;
@@ -256,6 +257,7 @@ export class PhotosComponent implements OnInit, OnDestroy {
       // Fetch all favourited photos
       this.photos = await this.favouritesService.getFavouritePhotos();
       this.hasMorePhotos = false; // No infinite scroll for favourites
+      console.log('loadFavouritePhotos: Loaded', this.photos.length, 'photos');
 
       // Auto-select first photo if available
       if (this.photos.length > 0) {
