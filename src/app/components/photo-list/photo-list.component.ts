@@ -156,15 +156,18 @@ export class PhotoListComponent implements OnInit, OnDestroy {
   async onFavouriteClick(event: Event, photo: Photo) {
     event.stopPropagation();
 
-    // No-op if already favourited or in-flight
-    if (this.isFavourite(photo) || this.isFavouring(photo)) return;
+    if (this.isFavouring(photo)) return;
 
     this.favoritingInProgress.add(photo.fileName);
     try {
-      const metadataKey = this.photoService.getMetadataKey(photo.key);
-      await this.favouritesService.addFavourite(photo, metadataKey);
+      if (this.isFavourite(photo)) {
+        await this.favouritesService.removeFavourite(photo);
+      } else {
+        const metadataKey = this.photoService.getMetadataKey(photo.key);
+        await this.favouritesService.addFavourite(photo, metadataKey);
+      }
     } catch (error) {
-      console.error('Failed to favourite photo:', photo.fileName, error);
+      console.error('Failed to toggle favourite photo:', photo.fileName, error);
     } finally {
       this.favoritingInProgress.delete(photo.fileName);
     }

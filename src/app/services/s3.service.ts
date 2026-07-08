@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { S3Client, ListObjectsV2Command, GetObjectCommand, PutObjectCommand, ListObjectsV2CommandOutput } from '@aws-sdk/client-s3';
+import { S3Client, ListObjectsV2Command, GetObjectCommand, PutObjectCommand, HeadObjectCommand, DeleteObjectCommand, ListObjectsV2CommandOutput } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { environment } from '../../environments/environment.development';
 import { CognitoAuthService } from './cognito-auth.service';
@@ -137,5 +137,41 @@ export class S3Service {
 
     const client = await this.getS3Client();
     return await getSignedUrl(client, command, { expiresIn: 300 }); // 5 minutes, used immediately
+  }
+
+  /**
+   * Check whether an object exists in S3 (used to verify a working-folder copy
+   * still exists before allowing a favourite to be removed)
+   * Uses ListObjectsV2 to avoid CORS issues with HeadObject
+   */
+  async objectExists(key: string): Promise<boolean> {
+    try {
+      const command = new ListObjectsV2Command({
+        Bucket: this.bucketName,
+        Prefix: key,
+        MaxKeys: 1
+      });
+
+      const client = await this.getS3Client();
+      const response = await client.send(command);
+      return (response.Contents?.length ?? 0) > 0 && response.Contents?.[0].Key === key;
+    } catch (error: any) {
+      console.debug('objectExists check failed for', key, ':', error.message);
+      return false;
+    }
+  }
+
+  /**
+   * Delete an object from S3
+   * Used to remove a photo/metadata pair from the favourites folder
+   */
+  async deleteObject(key: string): Promise<void> {
+    const command = new DeleteObjectCommand({
+      Bucket: this.bucketName,
+      Key: key
+    });
+
+    const client = await this.getS3Client();
+    await client.send(command);
   }
 }

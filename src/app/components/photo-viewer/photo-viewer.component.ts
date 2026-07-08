@@ -336,14 +336,18 @@ export class PhotoViewerComponent implements OnChanges, OnDestroy {
   }
 
   async onFavouriteClick(): Promise<void> {
-    if (!this.photo || this.isFavourite() || this.isFavouring()) return;
+    if (!this.photo || this.isFavouring()) return;
 
     this.favouritingInProgress.add(this.photo.fileName);
     try {
-      const metadataKey = this.photoService.getMetadataKey(this.photo.key);
-      await this.favouritesService.addFavourite(this.photo, metadataKey);
+      if (this.isFavourite()) {
+        await this.favouritesService.removeFavourite(this.photo);
+      } else {
+        const metadataKey = this.photoService.getMetadataKey(this.photo.key);
+        await this.favouritesService.addFavourite(this.photo, metadataKey);
+      }
     } catch (error) {
-      console.error('Failed to favourite photo:', this.photo.fileName, error);
+      console.error('Failed to toggle favourite photo:', this.photo.fileName, error);
     } finally {
       this.favouritingInProgress.delete(this.photo.fileName);
     }

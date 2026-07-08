@@ -12,12 +12,14 @@ const PHOTO_PATTERN = /cat_(\d{8})_(\d{6})\.jpg$/;
 export class FavouritesService {
   public favouriteKeys$ = new BehaviorSubject<Set<string>>(new Set());
   private favouritesFolder: string;
+  private bucketFolder: string;
 
   constructor(
     private s3Service: S3Service,
     private photoService: PhotoService
   ) {
     this.favouritesFolder = environment.aws.favouritesFolder;
+    this.bucketFolder = environment.aws.bucketFolder;
   }
 
   /**
@@ -103,6 +105,36 @@ export class FavouritesService {
   }
 
   /**
+   * Remove a photo from the favourites folder, but only if a copy still exists
+   * in the working S3 folder — this keeps the removal safe/reversible (the
+   * photo can be favourited again). If the working copy is already gone,
+   * logs and does nothing.
+   */
+  async removeFavourite(photo: Photo): Promise<void> {
+    try {
+      const workingKey = `${this.bucketFolder}/${photo.fileName}`;
+      const stillInWorkingFolder = await this.s3Service.objectExists(workingKey);
+
+      if (!stillInWorkingFolder) {
+        console.error('Cannot unfavourite: working copy no longer exists for', photo.fileName);
+        return;
+      }
+
+      const destJpgKey = `${this.favouritesFolder}/${photo.fileName}`;
+      const destJsonKey = `${this.favouritesFolder}/${photo.fileName.replace('.jpg', '.json')}`;
+
+      await this.s3Service.deleteObject(destJpgKey);
+      await this.s3Service.deleteObject(destJsonKey);
+
+      const updated = new Set(this.favouriteKeys$.getValue());
+      updated.delete(photo.fileName);
+      this.favouriteKeys$.next(updated);
+    } catch (error) {
+      console.error('Failed to remove favourite photo:', photo.fileName, error);
+    }
+  }
+
+  /**
    * Fetch all favourited photos as Photo objects (for browse-favourites view)
    * Returns a flat, paginated listing sorted newest-first
    */
@@ -111,16 +143,13 @@ export class FavouritesService {
     let continuationToken: string | undefined;
 
     try {
-      console.log('getFavouritePhotos: Starting load from folder:', this.favouritesFolder);
       do {
-        console.log('getFavouritePhotos: Fetching page, token:', continuationToken);
         const response = await this.s3Service.listObjects(
           undefined,
           1000,
           continuationToken,
           this.favouritesFolder
         );
-        console.log('getFavouritePhotos: S3 response Contents count:', response.Contents?.length);
 
         // Filter by photo pattern and build Photo objects
         const filteredObjects = (response.Contents ?? []).filter(obj => {
@@ -155,7 +184,6 @@ export class FavouritesService {
       // Sort by timestamp (newest first)
       photos.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
-      console.log('getFavouritePhotos: Loaded', photos.length, 'favourited photos');
       return photos;
     } catch (error) {
       console.error('Failed to get favourite photos:', error);
