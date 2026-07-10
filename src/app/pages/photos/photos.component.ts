@@ -163,11 +163,21 @@ export class PhotosComponent implements OnInit, OnDestroy {
       // Clear cache when reloading (e.g., after date range change or refresh)
       this.photoService.clearCache();
 
-      // Load first page
-      const page = await this.photoService.getPhotosPage(this.PAGE_SIZE, this.currentPage);
+      // Preload first 3 pages to ensure there's content to scroll
+      let allPhotos: Photo[] = [];
+      let lastLoadedPage = -1;
+      for (let page = 0; page < 3; page++) {
+        const pageData = await this.photoService.getPhotosPage(this.PAGE_SIZE, page);
+        if (pageData.photos.length === 0) break;
+        allPhotos = allPhotos.concat(pageData.photos);
+        this.hasMorePhotos = pageData.hasMore;
+        lastLoadedPage = page;
+        if (!pageData.hasMore) break;
+      }
 
-      this.photos = page.photos;
-      this.hasMorePhotos = page.hasMore;
+      this.photos = allPhotos;
+      this.currentPage = lastLoadedPage; // Start from the last loaded page
+      console.log(`Preloaded ${lastLoadedPage + 1} pages (${allPhotos.length} photos) to enable scrolling`);
 
       // Auto-select first photo if available
       if (this.photos.length > 0 && !this.selectedPhoto) {
